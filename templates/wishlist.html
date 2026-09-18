@@ -279,9 +279,9 @@
 
                     <form
                         method="POST"
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         action="/wishlist/remove/{{ game.app_id }}"
                     >
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button
                             type="submit"
                             class="btn remove-btn"
