@@ -1,0 +1,2303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>{{ game.name }} — Steam Pulse</title>
+
+<style>
+*{box-sizing:border-box}
+
+:root{
+    --bg:#071018;
+    --panel:#0c1722;
+    --panel2:#101d29;
+    --border:#1d3142;
+    --text:#e8f0f6;
+    --muted:#8ea0b0;
+    --blue:#66c0f4;
+    --green:#a4d007;
+    --steam:#1a9fff;
+}
+
+body{
+    margin:0;
+    background:
+        radial-gradient(circle at 70% -10%,rgba(26,159,255,.08),transparent 35%),
+        #071018;
+    color:var(--text);
+    font-family:Arial,Helvetica,sans-serif;
+}
+
+/* ================= SIDEBAR ================= */
+
+.sidebar{
+    position:fixed;
+    left:0;
+    top:0;
+    bottom:0;
+    width:185px;
+    background:rgba(7,16,24,.97);
+    border-right:1px solid var(--border);
+    padding:22px 12px;
+    z-index:20;
+}
+
+.logo{
+    font-size:19px;
+    font-weight:900;
+    padding:8px 10px 30px;
+    color:var(--blue);
+}
+
+.logo span{color:#fff}
+
+.nav-title{
+    color:#52677a;
+    font-size:9px;
+    font-weight:bold;
+    letter-spacing:1.5px;
+    margin:18px 10px 8px;
+}
+
+.nav a{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    padding:11px 10px;
+    margin:3px 0;
+    border-radius:7px;
+    color:#91a3b4;
+    text-decoration:none;
+    font-size:13px;
+    transition:.2s;
+}
+
+.nav a:hover,
+.nav a.active{
+    background:#162839;
+    color:var(--blue);
+}
+
+/* ================= MAIN ================= */
+
+.main{
+    margin-left:185px;
+    min-height:100vh;
+}
+
+/* ================= TOPBAR ================= */
+
+.topbar{
+    height:64px;
+    background:rgba(10,20,30,.9);
+    backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    padding:0 28px;
+    gap:25px;
+    position:sticky;
+    top:0;
+    z-index:15;
+}
+
+.search{
+    width:450px;
+}
+
+.search input{
+    width:100%;
+    background:#111e2b;
+    border:1px solid #25394a;
+    border-radius:8px;
+    padding:11px 15px;
+    color:white;
+    outline:none;
+    transition:.2s;
+}
+
+.search input:focus{
+    border-color:var(--blue);
+    box-shadow:0 0 0 3px rgba(102,192,244,.08);
+}
+
+.topnav{
+    display:flex;
+    gap:23px;
+    margin-left:auto;
+}
+
+.topnav a{
+    color:#9eafbe;
+    text-decoration:none;
+    font-size:12px;
+}
+
+.topnav a:hover{color:white}
+
+.live{
+    font-size:11px;
+    color:#9aaaba;
+}
+
+.dot{
+    display:inline-block;
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:#a4d007;
+    margin-right:5px;
+    box-shadow:0 0 8px rgba(164,208,7,.7);
+    animation:livePulse 1.8s ease-in-out infinite;
+}
+
+@keyframes livePulse{
+    0%,100%{
+        opacity:1;
+        transform:scale(1);
+        box-shadow:0 0 7px rgba(164,208,7,.65);
+    }
+
+    50%{
+        opacity:.35;
+        transform:scale(.82);
+        box-shadow:0 0 3px rgba(164,208,7,.25);
+    }
+}
+
+
+/* ================= STORE PRICES ================= */
+
+
+/* ================= STORE PRICES ================= */
+
+
+/* ================= STORE PRICES ================= */
+
+.store-prices-section{
+    margin-top:24px;
+    margin-bottom:28px;
+    padding:20px 20px 22px;
+    background:
+        linear-gradient(145deg,rgba(10,29,43,.98),rgba(5,16,25,.99));
+    border:1px solid #21485f;
+    border-radius:14px;
+    box-shadow:
+        0 20px 60px rgba(0,0,0,.28),
+        inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.section-title{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin:0 2px 25px;
+}
+
+.section-title-main{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.section-title span{
+    color:#edf5f8;
+    font-size:18px;
+    font-weight:850;
+    letter-spacing:.2px;
+}
+
+.section-title span:before{
+    content:"◆";
+    color:#28a9e8;
+    font-size:12px;
+    margin-right:9px;
+}
+
+.section-title small{
+    color:#718b9d;
+    font-size:11px;
+}
+
+.store-updated{
+    color:#71899a;
+    font-size:11px;
+}
+
+.store-grid{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:18px;
+    padding:0 2px;
+}
+
+.store-card{
+    position:relative;
+    min-height:280px;
+    padding:28px 28px 23px;
+
+    background:
+        linear-gradient(145deg,#0b1c29,#07151f);
+
+    border:1px solid #1d3d52;
+    border-radius:12px;
+
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+
+    transition:
+        transform .25s ease,
+        border-color .25s ease,
+        box-shadow .25s ease;
+}
+
+.store-card:hover{
+    transform:translateY(-3px);
+    border-color:#31566d;
+    box-shadow:0 18px 40px rgba(0,0,0,.3);
+}
+
+/* ---------- STORE BRAND ---------- */
+
+.store-brand{
+    display:flex;
+    align-items:center;
+    gap:15px;
+    margin-bottom:28px;
+}
+
+.store-logo{
+    width:64px;
+    height:64px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:12px;
+
+    border:1px solid rgba(255,255,255,.10);
+
+    box-shadow:
+        0 8px 22px rgba(0,0,0,.28);
+
+    flex-shrink:0;
+}
+
+.store-logo img{
+    width:46px;
+    height:46px;
+    object-fit:contain;
+}
+
+/* Steam */
+.store-logo-steam{
+    border-radius:50%;
+    background:linear-gradient(145deg,#1b4f91,#102d5d);
+    box-shadow:
+        0 8px 22px rgba(0,0,0,.3),
+        0 0 18px rgba(27,110,220,.20);
+}
+
+/* GOG */
+.store-logo-gog{
+    background:#f5f5f5;
+    border-color:rgba(255,255,255,.25);
+}
+
+/* Epic Games */
+.store-logo-epic{
+    background:#f2f2f2;
+    border-color:rgba(255,255,255,.25);
+}
+
+.store-name{
+    color:#edf3f6;
+    font-size:18px;
+    font-weight:850;
+    letter-spacing:.8px;
+}
+
+/* ---------- PRICE ---------- */
+
+.store-price-row{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+.store-price{
+    display:inline-block;
+    color:#f5f9fb;
+    font-size:34px;
+    line-height:1;
+    font-weight:900;
+    letter-spacing:-1px;
+}
+
+.store-old-price{
+    color:#718596;
+    font-size:13px;
+    text-decoration:line-through;
+}
+
+.store-discount{
+    padding:7px 10px;
+    border-radius:6px;
+
+    background:#a4d007;
+    color:#132000;
+
+    font-size:11px;
+    font-weight:950;
+}
+
+/* ---------- BEST PRICE CARD ---------- */
+
+.store-card.best-price-card{
+    border-color:#00ff88;
+
+    background:
+        radial-gradient(
+            circle at 50% 50%,
+            rgba(0,255,136,.09),
+            transparent 62%
+        ),
+        linear-gradient(145deg,#09221f,#07191d);
+
+    box-shadow:
+        0 0 10px rgba(0,255,136,.45),
+        0 0 30px rgba(0,255,136,.20),
+        inset 0 0 30px rgba(0,255,136,.035);
+
+    animation:bestCardPulse 2.8s ease-in-out infinite;
+}
+
+.store-card.best-price-card .store-price{
+    color:#39ff98;
+    text-shadow:0 0 18px rgba(0,255,136,.20);
+}
+
+.store-best{
+    position:absolute;
+    top:-22px;
+    left:50%;
+
+    transform:translateX(-50%);
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+
+    min-width:150px;
+
+    padding:9px 19px;
+
+    border:2px solid #a4d007;
+    border-radius:25px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #9bc900,
+            #dcff43,
+            #9bc900
+        );
+
+    background-size:200% 100%;
+
+    color:#101d00;
+
+    font-size:11px;
+    font-weight:950;
+    letter-spacing:1px;
+
+    white-space:nowrap;
+    z-index:20;
+
+    box-shadow:
+        0 0 10px rgba(164,208,7,.7),
+        0 0 27px rgba(164,208,7,.3);
+
+    animation:
+        bestPricePulse 2.5s ease-in-out infinite,
+        bestPriceGradient 3s linear infinite;
+}
+
+.store-best:before{
+    content:"♛";
+    font-size:17px;
+}
+
+/* ---------- OPEN ---------- */
+
+.store-open{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    width:100%;
+    box-sizing:border-box;
+
+    margin-top:24px;
+    padding:13px 16px;
+
+    border-radius:8px;
+
+    background:#0c2537;
+    border:1px solid #28617f;
+
+    color:#66c0f4;
+
+    text-decoration:none;
+
+    font-size:13px;
+    font-weight:800;
+
+    transition:.22s ease;
+}
+
+.store-open:hover{
+    background:#143b54;
+    border-color:#66c0f4;
+    color:#fff;
+
+    box-shadow:
+        0 0 14px rgba(102,192,244,.2);
+}
+
+.store-card.best-price-card .store-open{
+    border-color:#00ff88;
+    background:rgba(0,255,136,.055);
+    color:#8affc1;
+
+    box-shadow:
+        0 0 10px rgba(0,255,136,.38),
+        0 0 24px rgba(0,255,136,.12);
+}
+
+.store-card.best-price-card .store-open:hover{
+    background:rgba(0,255,136,.15);
+    color:#fff;
+
+    box-shadow:
+        0 0 15px rgba(0,255,136,.65),
+        0 0 32px rgba(0,255,136,.23);
+}
+
+.store-open-disabled{
+    color:#617788;
+    border-color:#294354;
+    background:#0a1822;
+}
+
+/* ---------- UNAVAILABLE ---------- */
+
+.store-unavailable{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+
+    padding:8px 0;
+}
+
+.store-unavailable strong{
+    color:#8499a8;
+    font-size:14px;
+    font-weight:700;
+}
+
+.store-unavailable small{
+    color:#566c7c;
+    font-size:11px;
+}
+
+/* ---------- FEATURES ---------- */
+
+.store-features{
+    display:flex;
+    gap:22px;
+    margin-top:17px;
+
+    color:#5deca2;
+    font-size:10px;
+}
+
+.store-features.muted{
+    color:#647a8a;
+}
+
+/* ---------- ANIMATIONS ---------- */
+
+
+/* ================= BEST PRICE PARTICLES ================= */
+
+.particle-field{
+    position:absolute;
+    inset:-34px -55px;
+    pointer-events:none;
+    overflow:visible;
+    z-index:-1;
+}
+
+.particle-field i{
+    position:absolute;
+    left:50%;
+    top:50%;
+
+    width:4px;
+    height:4px;
+
+    border-radius:50%;
+    background:#58ff9d;
+
+    box-shadow:
+        0 0 5px #00ff88,
+        0 0 12px rgba(0,255,136,.8);
+
+    opacity:0;
+
+    animation:priceParticle 4.5s ease-out infinite;
+}
+
+/* müxtəlif istiqamətlər */
+.particle-field i:nth-child(1){
+    --x:-75px; --y:-24px;
+    animation-delay:0s;
+}
+.particle-field i:nth-child(2){
+    --x:78px; --y:-18px;
+    animation-delay:.5s;
+}
+.particle-field i:nth-child(3){
+    --x:-92px; --y:8px;
+    animation-delay:1s;
+}
+.particle-field i:nth-child(4){
+    --x:94px; --y:14px;
+    animation-delay:1.4s;
+}
+.particle-field i:nth-child(5){
+    --x:-55px; --y:30px;
+    animation-delay:1.9s;
+}
+.particle-field i:nth-child(6){
+    --x:62px; --y:32px;
+    animation-delay:2.3s;
+}
+.particle-field i:nth-child(7){
+    --x:-105px; --y:-5px;
+    animation-delay:2.8s;
+}
+.particle-field i:nth-child(8){
+    --x:108px; --y:-7px;
+    animation-delay:3.2s;
+}
+.particle-field i:nth-child(9){
+    --x:-35px; --y:-34px;
+    animation-delay:3.6s;
+}
+.particle-field i:nth-child(10){
+    --x:38px; --y:-31px;
+    animation-delay:4s;
+}
+.particle-field i:nth-child(11){
+    --x:-72px; --y:20px;
+    animation-delay:1.2s;
+}
+.particle-field i:nth-child(12){
+    --x:75px; --y:23px;
+    animation-delay:2.6s;
+}
+
+@keyframes priceParticle{
+    0%{
+        transform:
+            translate(-50%,-50%)
+            translate(0,0)
+            scale(.25);
+        opacity:0;
+    }
+
+    12%{
+        opacity:.95;
+    }
+
+    70%{
+        opacity:.7;
+    }
+
+    100%{
+        transform:
+            translate(-50%,-50%)
+            translate(var(--x),var(--y))
+            scale(1.15);
+        opacity:0;
+    }
+}
+
+.best-crown,
+.store-best > span:last-child{
+    position:relative;
+    z-index:3;
+}
+
+@keyframes bestCardPulse{
+    0%,100%{
+        box-shadow:
+            0 0 8px rgba(0,255,136,.35),
+            0 0 25px rgba(0,255,136,.13),
+            inset 0 0 20px rgba(0,255,136,.025);
+    }
+
+    50%{
+        box-shadow:
+            0 0 16px rgba(0,255,136,.68),
+            0 0 42px rgba(0,255,136,.30),
+            inset 0 0 30px rgba(0,255,136,.06);
+    }
+}
+
+@keyframes bestPricePulse{
+    0%,100%{
+        transform:translateX(-50%) scale(1);
+    }
+
+    50%{
+        transform:translateX(-50%) scale(1.045);
+    }
+}
+
+@keyframes bestPriceGradient{
+    0%{
+        background-position:0% 50%;
+    }
+
+    100%{
+        background-position:200% 50%;
+    }
+}
+
+@media(max-width:1100px){
+    .store-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+}
+
+@media(max-width:700px){
+    .store-grid{
+        grid-template-columns:1fr;
+    }
+
+    .store-card{
+        min-height:240px;
+    }
+
+    .section-title{
+        align-items:flex-start;
+        flex-direction:column;
+        gap:8px;
+    }
+}
+
+
+/* ================= CONTENT ================= */
+
+.content{
+    max-width:1500px;
+    margin:auto;
+    padding:26px 32px 70px;
+}
+
+.back{
+    color:var(--blue);
+    text-decoration:none;
+    font-size:12px;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-bottom:17px;
+}
+
+.back:hover{text-decoration:underline}
+
+/* ================= HERO ================= */
+
+.hero{
+    position:relative;
+    min-height:475px;
+    overflow:hidden;
+    border:1px solid #294052;
+    border-radius:15px;
+    background:#0b151f;
+    box-shadow:
+        0 25px 70px rgba(0,0,0,.35),
+        inset 0 1px 0 rgba(255,255,255,.03);
+}
+
+.hero-bg{
+    position:absolute;
+    inset:0;
+    background-image:
+        linear-gradient(
+            90deg,
+            rgba(4,9,14,.99) 0%,
+            rgba(4,9,14,.94) 25%,
+            rgba(4,9,14,.60) 52%,
+            rgba(4,9,14,.20) 78%,
+            rgba(4,9,14,.72) 100%
+        ),
+        linear-gradient(
+            0deg,
+            rgba(4,9,14,.9) 0%,
+            transparent 55%
+        ),
+        url("{{ game.background_image or game.header_image or '' }}");
+    background-size:cover;
+    background-position:center;
+    transform:scale(1.015);
+}
+
+.hero-content{
+    position:relative;
+    z-index:2;
+    min-height:475px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:55px 55px;
+    max-width:850px;
+}
+
+.type{
+    display:inline-flex;
+    align-self:flex-start;
+    background:rgba(21,51,74,.88);
+    border:1px solid rgba(102,192,244,.22);
+    color:var(--blue);
+    padding:7px 11px;
+    border-radius:5px;
+    font-size:9px;
+    font-weight:bold;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+}
+
+.hero h1{
+    font-size:clamp(38px,4.2vw,62px);
+    line-height:1.02;
+    margin:17px 0 10px;
+    letter-spacing:-1.5px;
+    text-shadow:0 4px 25px rgba(0,0,0,.65);
+}
+
+.dev{
+    color:#b5c2cd;
+    font-size:13px;
+    margin-bottom:28px;
+}
+
+.price-row{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:13px;
+}
+
+.price{
+    font-size:38px;
+    font-weight:900;
+    letter-spacing:-1px;
+}
+
+.old-price{
+    color:#718294;
+    text-decoration:line-through;
+    font-size:15px;
+}
+
+.discount{
+    background:var(--green);
+    color:#101600;
+    padding:8px 12px;
+    border-radius:5px;
+    font-weight:900;
+    font-size:12px;
+    box-shadow:0 4px 20px rgba(164,208,7,.12);
+}
+
+.free{
+    color:var(--green);
+    font-size:38px;
+    font-weight:900;
+}
+
+.actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:26px;
+}
+
+.btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:13px 19px;
+    border-radius:7px;
+    text-decoration:none;
+    font-weight:bold;
+    font-size:12px;
+    transition:.2s;
+}
+
+.steam-btn{
+    background:linear-gradient(135deg,#1a9fff,#1478d0);
+    color:#fff;
+    box-shadow:0 8px 25px rgba(26,159,255,.18);
+}
+
+.steam-btn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 12px 30px rgba(26,159,255,.28);
+}
+
+.watch-btn{
+    background:rgba(22,39,56,.9);
+    color:#c7d5e0;
+    border:1px solid #304456;
+}
+
+.watch-btn:hover{
+    border-color:#55718a;
+    background:#1a2d40;
+}
+
+/* ================= SCREENSHOTS ================= */
+
+.gallery{
+    margin-top:25px;
+}
+
+.section-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:13px;
+}
+
+.section-title{
+    font-size:19px;
+    margin:0;
+}
+
+.section-sub{
+    color:#617487;
+    font-size:10px;
+}
+
+.screens{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:10px;
+}
+
+.screen-wrap{
+    position:relative;
+    overflow:hidden;
+    border-radius:8px;
+    aspect-ratio:16/9;
+    background:#0b151f;
+    border:1px solid #263949;
+    cursor:pointer;
+}
+
+.screen{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+    transition:.35s;
+}
+
+.screen-wrap::after{
+    content:"⌕";
+    position:absolute;
+    right:9px;
+    bottom:8px;
+    width:28px;
+    height:28px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    background:rgba(0,0,0,.65);
+    color:white;
+    opacity:0;
+    transition:.2s;
+}
+
+.screen-wrap:hover .screen{
+    transform:scale(1.06);
+}
+
+.screen-wrap:hover{
+    border-color:var(--blue);
+}
+
+.screen-wrap:hover::after{
+    opacity:1;
+}
+
+/* ================= GRID ================= */
+
+.grid{
+    display:grid;
+    grid-template-columns:minmax(0,2fr) minmax(300px,1fr);
+    gap:18px;
+    margin-top:20px;
+}
+
+.card{
+    background:linear-gradient(180deg,#0e1924,#0b1620);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:21px;
+    box-shadow:0 10px 35px rgba(0,0,0,.12);
+}
+
+.card + .card{
+    margin-top:18px;
+}
+
+.card-title{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:17px;
+    margin:0 0 16px;
+}
+
+.description{
+    color:#aab8c5;
+    line-height:1.75;
+    font-size:13px;
+}
+
+/* ================= INFO ================= */
+
+.info-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:9px;
+}
+
+.info{
+    background:#09131d;
+    border:1px solid #172735;
+    padding:13px;
+    border-radius:8px;
+}
+
+.info-label{
+    color:#607589;
+    font-size:8px;
+    text-transform:uppercase;
+    letter-spacing:.7px;
+    margin-bottom:6px;
+}
+
+.info-value{
+    color:#dce5ec;
+    font-size:11px;
+    font-weight:bold;
+    line-height:1.4;
+    word-break:break-word;
+}
+
+/* ================= TAGS ================= */
+
+.tag-title{
+    color:#607589;
+    font-size:9px;
+    font-weight:bold;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    margin-top:19px;
+    margin-bottom:8px;
+}
+
+.tags{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+}
+
+.tag{
+    background:#172938;
+    border:1px solid #213b4e;
+    color:#94a9ba;
+    padding:6px 9px;
+    border-radius:5px;
+    font-size:10px;
+}
+
+.tag:hover{
+    color:#c7d5e0;
+    border-color:#36556c;
+}
+
+/* ================= PRICE ================= */
+
+.price-card{
+    margin-top:18px;
+}
+
+.price-stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:9px;
+}
+
+.stat{
+    background:#09131d;
+    border:1px solid #172735;
+    border-radius:8px;
+    padding:14px;
+}
+
+.stat-label{
+    color:#607589;
+    font-size:8px;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+}
+
+.stat-value{
+    font-size:20px;
+    font-weight:bold;
+    margin-top:7px;
+}
+
+.chart{
+    margin-top:18px;
+    height:260px;
+    background:
+        linear-gradient(rgba(9,19,29,.96),rgba(9,19,29,.96)),
+        repeating-linear-gradient(
+            0deg,
+            transparent 0,
+            transparent 49px,
+            #172735 50px
+        );
+    border:1px solid #172735;
+    border-radius:9px;
+    padding:14px;
+    overflow:hidden;
+}
+
+.chart svg{
+    width:100%;
+    height:100%;
+}
+
+.chart-line{
+    fill:none;
+    stroke:var(--blue);
+    stroke-width:4;
+    stroke-linejoin:round;
+    stroke-linecap:round;
+    filter:drop-shadow(0 0 6px rgba(102,192,244,.35));
+}
+
+.chart-area{
+    fill:url(#areaGradient);
+    opacity:.28;
+}
+
+.chart-dot{
+    fill:var(--blue);
+    stroke:#071018;
+    stroke-width:3;
+}
+
+/* ================= STEAM LINK ================= */
+
+.steam-link{
+    display:block;
+    margin-top:15px;
+    padding:12px;
+    text-align:center;
+    background:#162738;
+    border:1px solid #263f53;
+    color:var(--blue);
+    text-decoration:none;
+    border-radius:7px;
+    font-size:11px;
+    font-weight:bold;
+}
+
+.steam-link:hover{
+    background:#1a3145;
+}
+
+/* ================= MODAL ================= */
+
+.modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.94);
+    backdrop-filter:blur(8px);
+    z-index:100;
+    align-items:center;
+    justify-content:center;
+    padding:30px;
+}
+
+.modal.show{display:flex}
+
+.modal img{
+    max-width:92vw;
+    max-height:86vh;
+    border-radius:8px;
+    box-shadow:0 20px 80px rgba(0,0,0,.7);
+}
+
+.close{
+    position:absolute;
+    top:20px;
+    right:27px;
+    font-size:40px;
+    line-height:1;
+    color:white;
+    cursor:pointer;
+    z-index:3;
+}
+
+.modal-nav{
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    width:46px;
+    height:46px;
+    border-radius:50%;
+    border:1px solid #40576a;
+    background:rgba(10,20,30,.8);
+    color:white;
+    font-size:25px;
+    cursor:pointer;
+}
+
+.modal-nav:hover{
+    background:#1a3145;
+}
+
+.prev{left:25px}
+.next{right:25px}
+
+.modal-counter{
+    position:absolute;
+    bottom:22px;
+    left:50%;
+    transform:translateX(-50%);
+    color:#9aabba;
+    font-size:11px;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media(max-width:1100px){
+
+    .sidebar{width:160px}
+    .main{margin-left:160px}
+
+    .screens{
+        grid-template-columns:repeat(3,1fr);
+    }
+
+    .grid{
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:800px){
+
+    .sidebar{display:none}
+    .main{margin-left:0}
+
+    .topnav{display:none}
+
+    .topbar{
+        padding:0 15px;
+    }
+
+    .search{
+        width:100%;
+    }
+
+    .content{
+        padding:18px 15px 50px;
+    }
+
+    .hero{
+        min-height:390px;
+    }
+
+    .hero-content{
+        min-height:390px;
+        padding:35px 25px;
+    }
+
+    .hero h1{
+        font-size:35px;
+    }
+
+    .screens{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .price-stats{
+        grid-template-columns:1fr 1fr;
+    }
+
+    .info-grid{
+        grid-template-columns:1fr;
+    }
+
+    .modal{
+        padding:15px;
+    }
+
+    .prev{left:10px}
+    .next{right:10px}
+}
+
+@media(max-width:500px){
+
+    .price{
+        font-size:30px;
+    }
+
+    .free{
+        font-size:30px;
+    }
+
+    .screens{
+        grid-template-columns:1fr;
+    }
+
+    .price-stats{
+        grid-template-columns:1fr 1fr;
+    }
+
+    .actions .btn{
+        width:100%;
+    }
+}
+
+.wishlist-form {
+    display: inline-block;
+    margin: 0;
+}
+
+.wishlist-btn {
+    border: 1px solid #263646;
+    background: rgba(13, 21, 31, .9);
+    color: #b8c5d3;
+    cursor: pointer;
+    font: inherit;
+}
+
+.wishlist-btn:hover {
+    border-color: rgba(255, 80, 130, .55);
+    color: #ff6f9b;
+    background: rgba(255, 50, 100, .08);
+}
+
+.wishlist-btn.wishlisted {
+    border-color: rgba(255, 80, 130, .45);
+    color: #ff6f9b;
+    background: rgba(255, 50, 100, .10);
+}
+
+.login-wishlist {
+    display: inline-block;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+
+<aside class="sidebar">
+
+<a href="/" class="logo">
+🎮 <span>STEAM</span> PULSE
+</div>
+
+<div class="nav-title">DISCOVER</div>
+
+<nav class="nav">
+<a href="/">🏠 Dashboard</a>
+<a href="/search">🔎 Search</a>
+<a href="/">🔥 Deals</a>
+<a href="/search">🎮 All Games</a>
+</nav>
+
+<div class="nav-title">INTELLIGENCE</div>
+
+<nav class="nav">
+<a href="/">📊 Statistics</a>
+<a href="/">❤️ Watchlist</a>
+<a href="/">🗄 Database</a>
+</nav>
+
+</aside>
+
+
+<main class="main">
+
+<header class="topbar">
+
+<form class="search" action="/search">
+
+<input
+name="q"
+placeholder="Search Steam games..."
+autocomplete="off"
+>
+
+</form>
+
+<nav class="topnav">
+<a href="/">Home</a>
+<a href="/search">Deals</a>
+<a href="/search">Browse</a>
+<a href="/">Stats</a>
+</nav>
+
+<div class="live">
+<span class="dot"></span> Live
+</div>
+
+</header>
+
+
+<div class="content">
+
+<a href="/" class="back">← Back to Dashboard</a>
+
+
+<!-- ================= HERO ================= -->
+
+<section class="hero">
+
+<div class="hero-bg"></div>
+
+<div class="hero-content">
+
+<div class="type">
+{{ game.type or "GAME" }}
+</div>
+
+<h1>{{ game.name }}</h1>
+
+<div class="dev">
+
+{{ game.developer or "Unknown Developer" }}
+
+{% if game.publisher %}
+ · {{ game.publisher }}
+{% endif %}
+
+</div>
+
+<div class="price-row">
+
+{% if steam_price.current_price is not none and steam_price.current_price > 0 %}
+
+<div class="price">
+${{ "%.2f"|format(steam_price.current_price / 100) }}
+</div>
+
+{% if steam_price.original_price is not none and
+steam_price.original_price > steam_price.current_price %}
+
+<div class="old-price">
+${{ "%.2f"|format(steam_price.original_price / 100) }}
+</div>
+
+{% endif %}
+
+{% if steam_price.discount_percent and steam_price.discount_percent > 0 %}
+
+<div class="discount">
+-{{ steam_price.discount_percent }}%
+</div>
+
+{% endif %}
+
+{% else %}
+
+<div class="free">FREE</div>
+
+{% endif %}
+
+</div>
+
+<div class="actions">
+
+{% if game.steam_url %}
+
+<a
+href="{{ game.steam_url }}"
+target="_blank"
+rel="noopener noreferrer"
+class="btn steam-btn"
+>
+Open on Steam ↗
+</a>
+
+{% endif %}
+
+<a href="/search" class="btn watch-btn">
+🔎 Find Similar Games
+</a>
+
+{% if session.get("user_id") %}
+
+    {% if wishlist_added %}
+    <form method="POST" action="/wishlist/remove/{{ game.app_id }}" class="wishlist-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn wishlist-btn wishlisted">
+            ♥ Remove from Wishlist
+        </button>
+    </form>
+    {% else %}
+    <form method="POST" action="/wishlist/add/{{ game.app_id }}" class="wishlist-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn wishlist-btn">
+            ♡ Add to Wishlist
+        </button>
+    </form>
+    {% endif %}
+
+{% else %}
+
+<a href="/login" class="btn wishlist-btn login-wishlist">
+    ♡ Login to Wishlist
+</a>
+
+{% endif %}
+
+</div>
+
+</div>
+
+</section>
+
+</div>
+
+</section>
+
+<!-- ================= STORE PRICES ================= -->
+
+<section class="store-prices-section">
+
+    <div class="section-title">
+        <div class="section-title-main">
+            <span>STORE PRICES</span>
+            <small>Compare current prices across stores</small>
+        </div>
+
+        <div class="store-updated">
+            ↻ Last updated
+        </div>
+    </div>
+
+    <div class="store-grid">
+
+        {% for slug, store_name, logo in [
+            ('steam', 'STEAM', 'https://cdn.simpleicons.org/steam/ffffff'),
+            ('gog', 'GOG', 'https://cdn.simpleicons.org/gogdotcom/ffffff'),
+            ('epic', 'EPIC GAMES', 'https://cdn.simpleicons.org/epicgames/ffffff')
+        ] %}
+
+        {% set ns = namespace(store=None) %}
+
+        {% for store in store_prices %}
+            {% if store.store_slug == slug %}
+                {% set ns.store = store %}
+            {% endif %}
+        {% endfor %}
+
+        {% set steam_display_price = steam_price if slug == 'steam' else ns.store %}
+        
+        {% set is_best = (
+            best_price is not none
+            and steam_display_price
+            and (
+                (slug == 'steam' and steam_display_price.current_price is not none)
+                or (slug != 'steam' and steam_display_price.available and steam_display_price.current_price is not none)
+            )
+            and steam_display_price.current_price == best_price
+        ) %}
+
+        <div class="store-card{% if is_best %} best-price-card{% endif %}">
+
+            {% if is_best %}
+            <div class="store-best">
+                <span class="particle-field">
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                </span>
+                <span class="best-crown">♛</span>
+                <span>BEST PRICE</span>
+            </div>
+            {% endif %}
+
+            <div class="store-info">
+
+                <div class="store-brand">
+
+                    <div class="store-logo store-logo-{{ slug }}">
+                        {% if slug == 'steam' %}
+                            <img
+                                src="https://cdn.simpleicons.org/steam/ffffff"
+                                alt="Steam"
+                                loading="lazy"
+                            >
+                        {% elif slug == 'gog' %}
+                            <img
+                                src="https://cdn.simpleicons.org/gogdotcom/111111"
+                                alt="GOG"
+                                loading="lazy"
+                            >
+                        {% elif slug == 'epic' %}
+                            <img
+                                src="https://cdn.simpleicons.org/epicgames/111111"
+                                alt="Epic Games"
+                                loading="lazy"
+                            >
+                        {% endif %}
+                    </div>
+
+                    <div class="store-name">
+                        {{ store_name }}
+                    </div>
+
+                </div>
+
+                {% if steam_display_price and (
+                    (slug == 'steam' and steam_display_price.current_price is not none)
+                    or
+                    (slug != 'steam' and steam_display_price.available and steam_display_price.current_price is not none)
+                ) %}
+
+                    <div class="store-price-row">
+
+                        <div class="store-price">
+                            {{ steam_display_price.currency }}
+                            {{ "%.2f"|format(steam_display_price.current_price / 100) }}
+                        </div>
+
+                        {% if steam_display_price.original_price is not none
+                              and steam_display_price.original_price > steam_display_price.current_price %}
+
+                            <div class="store-old-price">
+                                {{ steam_display_price.currency }}
+                                {{ "%.2f"|format(steam_display_price.original_price / 100) }}
+                            </div>
+
+                        {% endif %}
+
+                        {% if steam_display_price.discount_percent
+                              and steam_display_price.discount_percent > 0 %}
+
+                            <div class="store-discount">
+                                -{{ steam_display_price.discount_percent }}%
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                {% else %}
+
+                    <div class="store-unavailable">
+                        <strong>Not available</strong>
+                        <small>Currently not sold on {{ store_name }}</small>
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+            {% if ns.store and ns.store.store_url %}
+
+                <a
+                    href="{{ ns.store.store_url }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="store-open"
+                >
+                    ↗ &nbsp; Open
+                </a>
+
+            {% else %}
+
+                <div class="store-open store-open-disabled">
+                    View Store ↗
+                </div>
+
+            {% endif %}
+
+            {% if is_best %}
+                <div class="store-features">
+                    <span>✓ Best current price</span>
+                    <span>✓ Price checked</span>
+                </div>
+            {% elif ns.store and ns.store.available %}
+                <div class="store-features">
+                    <span>✓ Current price</span>
+                    <span>✓ Price checked</span>
+                </div>
+            {% else %}
+                <div class="store-features muted">
+                    <span>ⓘ Check back later</span>
+                </div>
+            {% endif %}
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+<!-- ================= SCREENSHOTS ================= -->
+
+{% if game.screenshots and game.screenshots != "[]" %}
+
+{% set shots = game.screenshots | fromjson %}
+
+<section class="gallery">
+
+<div class="section-head">
+
+<h2 class="section-title">🖼 Screenshots</h2>
+
+<div class="section-sub">
+{{ shots|length }} images · Click to enlarge
+</div>
+
+</div>
+
+<div class="screens">
+
+{% for image in shots[:10] %}
+
+<div class="screen-wrap">
+
+<img
+src="{{ image }}"
+class="screen"
+data-index="{{ loop.index0 }}"
+data-image="{{ image }}"
+alt="{{ game.name }} screenshot"
+loading="lazy"
+>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</section>
+
+{% endif %}
+
+
+<!-- ================= MAIN GRID ================= -->
+
+<div class="grid">
+
+
+<!-- LEFT -->
+
+<div>
+
+
+<!-- ABOUT -->
+
+<div class="card">
+
+<h2 class="card-title">
+🎮 About This Game
+</h2>
+
+<div class="description">
+{{ game.short_description | safe }}
+</div>
+
+
+{% if game.genres and game.genres != "[]" %}
+
+{% set genres = game.genres | fromjson %}
+
+<div class="tag-title">Genres</div>
+
+<div class="tags">
+
+{% for genre in genres %}
+
+<span class="tag">{{ genre }}</span>
+
+{% endfor %}
+
+</div>
+
+{% endif %}
+
+
+{% if game.categories and game.categories != "[]" %}
+
+{% set categories = game.categories | fromjson %}
+
+<div class="tag-title">Features</div>
+
+<div class="tags">
+
+{% for category in categories[:12] %}
+
+<span class="tag">{{ category }}</span>
+
+{% endfor %}
+
+</div>
+
+{% endif %}
+
+</div>
+
+
+<!-- PRICE INTELLIGENCE -->
+
+<div class="card price-card">
+
+<h2 class="card-title">
+📈 Price Intelligence
+</h2>
+
+{% if history %}
+
+{% set prices = history | map(attribute='price') | list %}
+{% set valid = prices | select | list %}
+
+<div class="price-stats">
+
+<div class="stat">
+
+<div class="stat-label">
+CURRENT PRICE
+</div>
+
+<div class="stat-value">
+
+{% if steam_price.current_price is not none and steam_price.current_price > 0 %}
+${{ "%.2f"|format(steam_price.current_price / 100) }}
+{% else %}
+FREE
+{% endif %}
+
+</div>
+
+</div>
+
+
+<div class="stat">
+
+<div class="stat-label">
+HISTORICAL LOW
+</div>
+
+<div class="stat-value">
+
+{% if valid %}
+${{ "%.2f"|format((valid|min) / 100) }}
+{% else %}
+-
+{% endif %}
+
+</div>
+
+</div>
+
+
+<div class="stat">
+
+<div class="stat-label">
+HISTORICAL HIGH
+</div>
+
+<div class="stat-value">
+
+{% if valid %}
+${{ "%.2f"|format((valid|max) / 100) }}
+{% else %}
+-
+{% endif %}
+
+</div>
+
+</div>
+
+
+<div class="stat">
+
+<div class="stat-label">
+RECORDS
+</div>
+
+<div class="stat-value">
+{{ valid|length }}
+</div>
+
+</div>
+
+</div>
+
+
+{% if valid|length > 1 %}
+
+<div class="chart">
+
+<svg
+viewBox="0 0 1000 240"
+preserveAspectRatio="none"
+>
+
+<defs>
+
+<linearGradient
+id="areaGradient"
+x1="0"
+y1="0"
+x2="0"
+y2="1"
+>
+
+<stop
+offset="0%"
+stop-color="#66c0f4"
+stop-opacity=".5"
+/>
+
+<stop
+offset="100%"
+stop-color="#66c0f4"
+stop-opacity="0"
+/>
+
+</linearGradient>
+
+</defs>
+
+
+<line
+x1="0"
+y1="40"
+x2="1000"
+y2="40"
+stroke="#172735"
+/>
+
+<line
+x1="0"
+y1="100"
+x2="1000"
+y2="100"
+stroke="#172735"
+/>
+
+<line
+x1="0"
+y1="160"
+x2="1000"
+y2="160"
+stroke="#172735"
+/>
+
+<line
+x1="0"
+y1="220"
+x2="1000"
+y2="220"
+stroke="#172735"
+/>
+
+
+{% set maxprice = valid|max %}
+{% set minprice = valid|min %}
+
+{% set point_count = valid|length %}
+
+{% if point_count > 1 %}
+
+<polyline
+class="chart-line"
+points="
+
+{% set ns = namespace(i=0) %}
+
+{% for item in history %}
+
+{% if item.price is not none %}
+
+{{ (ns.i * (960 / (point_count - 1))) + 20 }},
+{{ 220 - (((item.price - minprice) / ([maxprice - minprice, 1]|max)) * 180) }}
+
+{% set ns.i = ns.i + 1 %}
+
+{% endif %}
+
+{% endfor %}
+
+"
+/>
+
+
+<polygon
+class="chart-area"
+points="
+
+20,220
+
+{% set ns = namespace(i=0) %}
+
+{% for item in history %}
+
+{% if item.price is not none %}
+
+{{ (ns.i * (960 / (point_count - 1))) + 20 }},
+{{ 220 - (((item.price - minprice) / ([maxprice - minprice, 1]|max)) * 180) }}
+
+{% set ns.i = ns.i + 1 %}
+
+{% endif %}
+
+{% endfor %}
+
+960,220
+
+"
+/>
+
+{% endif %}
+
+</svg>
+
+</div>
+
+{% endif %}
+
+{% else %}
+
+<div style="color:#607589;font-size:12px">
+Price history is being collected...
+</div>
+
+{% endif %}
+
+</div>
+
+</div>
+
+
+<!-- RIGHT -->
+
+<div>
+
+
+<!-- GAME INFORMATION -->
+
+<div class="card">
+
+<h2 class="card-title">
+ℹ️ Game Information
+</h2>
+
+<div class="info-grid">
+
+<div class="info">
+
+<div class="info-label">APP ID</div>
+
+<div class="info-value">
+{{ game.app_id }}
+</div>
+
+</div>
+
+
+<div class="info">
+
+<div class="info-label">RELEASE DATE</div>
+
+<div class="info-value">
+{{ game.release_date or "-" }}
+</div>
+
+</div>
+
+
+<div class="info">
+
+<div class="info-label">DEVELOPER</div>
+
+<div class="info-value">
+{{ game.developer or "-" }}
+</div>
+
+</div>
+
+
+<div class="info">
+
+<div class="info-label">PUBLISHER</div>
+
+<div class="info-value">
+{{ game.publisher or "-" }}
+</div>
+
+</div>
+
+
+<div class="info">
+
+<div class="info-label">CURRENCY</div>
+
+<div class="info-value">
+{{ steam_price.currency or game.currency or "-" }}
+</div>
+
+</div>
+
+
+<div class="info">
+
+<div class="info-label">DISCOUNT</div>
+
+<div class="info-value">
+{{ steam_price.discount_percent or 0 }}%
+</div>
+
+</div>
+
+</div>
+
+
+{% if game.steam_url %}
+
+<a
+href="{{ game.steam_url }}"
+target="_blank"
+rel="noopener noreferrer"
+class="steam-link"
+>
+View Store Page on Steam ↗
+</a>
+
+{% endif %}
+
+</div>
+
+
+<!-- QUICK PRICE -->
+
+<div class="card">
+
+<h2 class="card-title">
+💰 Current Deal
+</h2>
+
+{% if steam_price.current_price is not none and steam_price.current_price > 0 %}
+
+<div style="font-size:29px;font-weight:900">
+${{ "%.2f"|format(steam_price.current_price / 100) }}
+</div>
+
+{% if steam_price.original_price and steam_price.original_price > steam_price.current_price %}
+
+<div style="margin-top:5px;color:#718294;text-decoration:line-through;font-size:12px">
+Was ${{ "%.2f"|format(steam_price.original_price / 100) }}
+</div>
+
+{% endif %}
+
+{% if steam_price.discount_percent %}
+
+<div style="margin-top:12px;color:#a4d007;font-size:11px;font-weight:bold">
+Currently {{ steam_price.discount_percent }}% OFF
+</div>
+
+{% endif %}
+
+{% else %}
+
+<div style="font-size:29px;font-weight:900;color:#a4d007">
+FREE
+</div>
+
+{% endif %}
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- ================= MODAL ================= -->
+
+<div class="modal" id="modal">
+
+<div class="close" id="close">×</div>
+
+<button class="modal-nav prev" id="prev">‹</button>
+
+<img id="modalImage" src="" alt="Screenshot">
+
+<button class="modal-nav next" id="next">›</button>
+
+<div class="modal-counter" id="counter"></div>
+
+</div>
+
+
+<script>
+
+const modal = document.getElementById("modal");
+const modalImage = document.getElementById("modalImage");
+const closeButton = document.getElementById("close");
+const prevButton = document.getElementById("prev");
+const nextButton = document.getElementById("next");
+const counter = document.getElementById("counter");
+
+const images = Array.from(
+    document.querySelectorAll(".screen")
+);
+
+let currentIndex = 0;
+
+
+function showImage(index){
+
+    if(!images.length) return;
+
+    if(index < 0){
+        index = images.length - 1;
+    }
+
+    if(index >= images.length){
+        index = 0;
+    }
+
+    currentIndex = index;
+
+    modalImage.src =
+        images[currentIndex].dataset.image;
+
+    counter.textContent =
+        `${currentIndex + 1} / ${images.length}`;
+
+    modal.classList.add("show");
+}
+
+
+images.forEach((image,index)=>{
+
+    image.addEventListener("click",()=>{
+
+        showImage(index);
+
+    });
+
+});
+
+
+prevButton.addEventListener("click",()=>{
+
+    showImage(currentIndex - 1);
+
+});
+
+
+nextButton.addEventListener("click",()=>{
+
+    showImage(currentIndex + 1);
+
+});
+
+
+closeButton.addEventListener("click",()=>{
+
+    modal.classList.remove("show");
+
+});
+
+
+modal.addEventListener("click",(event)=>{
+
+    if(event.target === modal){
+
+        modal.classList.remove("show");
+
+    }
+
+});
+
+
+document.addEventListener("keydown",(event)=>{
+
+    if(!modal.classList.contains("show")) return;
+
+    if(event.key === "Escape"){
+
+        modal.classList.remove("show");
+
+    }
+
+    if(event.key === "ArrowLeft"){
+
+        showImage(currentIndex - 1);
+
+    }
+
+    if(event.key === "ArrowRight"){
+
+        showImage(currentIndex + 1);
+
+    }
+
+});
+
+</script>
+
+</main>
+
+</body>
+</html>

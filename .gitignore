@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+venv/
+.env
+
+# Database
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+
+# Backups
+*.backup
+*.bak
+*.tmp
+
+# Uploads
+uploads/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.pem
+*.key
+secrets/
+
+# Database backups
+steam.db.*

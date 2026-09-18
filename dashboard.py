@@ -1,0 +1,636 @@
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_from_directory
+from flask_wtf.csrf import CSRFProtect
+import sqlite3
+import os
+import secrets
+from dotenv import load_dotenv
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+
+app = Flask(__name__)
+csrf = CSRFProtect(app)
+load_dotenv()
+app.config['SECRET_KEY'] = os.environ['FLASK_SECRET_KEY']
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
+
+import json
+
+app.jinja_env.filters["fromjson"] = json.loads
+
+DB = "steam.db"
+
+
+def get_db():
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+ALLOWED_AVATAR_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
+AVATAR_UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads", "avatars")
+
+
+@app.route("/account/avatar", methods=["POST"])
+def upload_avatar():
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    file = request.files.get("avatar")
+
+    if not file or not file.filename:
+        return redirect(url_for("account"))
+
+    original_name = secure_filename(file.filename)
+
+    if "." not in original_name:
+        return "Invalid image file.", 400
+
+    extension = original_name.rsplit(".", 1)[1].lower()
+
+    if extension not in ALLOWED_AVATAR_EXTENSIONS:
+        return "Invalid image format.", 400
+
+    random_name = f"{secrets.token_hex(16)}.{extension}"
+    os.makedirs(AVATAR_UPLOAD_DIR, mode=0o700, exist_ok=True)
+
+    file.save(os.path.join(AVATAR_UPLOAD_DIR, random_name))
+
+    conn = get_db()
+
+    old_avatar = conn.execute(
+        "SELECT avatar_filename FROM users WHERE id = ?",
+        (session["user_id"],)
+    ).fetchone()
+
+    conn.execute(
+        "UPDATE users SET avatar_filename = ? WHERE id = ?",
+        (random_name, session["user_id"])
+    )
+    conn.commit()
+    conn.close()
+
+    if old_avatar and old_avatar["avatar_filename"]:
+        old_path = os.path.join(
+            AVATAR_UPLOAD_DIR,
+            old_avatar["avatar_filename"]
+        )
+        if os.path.isfile(old_path):
+            os.remove(old_path)
+
+    return redirect(url_for("account"))
+
+
+@app.route("/account/avatar/<path:filename>")
+def account_avatar(filename):
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    conn = get_db()
+
+    avatar = conn.execute(
+        "SELECT avatar_filename FROM users WHERE id = ?",
+        (session["user_id"],)
+    ).fetchone()
+
+    conn.close()
+
+    if not avatar or avatar["avatar_filename"] != filename:
+        return "Forbidden", 403
+
+    return send_from_directory(AVATAR_UPLOAD_DIR, filename)
+
+
+@app.route("/account")
+def account():
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    conn = get_db()
+
+    user = conn.execute(
+        """
+        SELECT id, username, email, created_at, avatar_filename
+        FROM users
+        WHERE id = ?
+        """,
+        (session["user_id"],)
+    ).fetchone()
+
+    conn.close()
+
+    if not user:
+        session.clear()
+        return redirect(url_for("login"))
+
+    return render_template(
+        "account.html",
+        user=user
+    )
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "GET":
+        return render_template("login.html")
+
+    email = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "")
+
+    conn = get_db()
+
+    user = conn.execute(
+        """
+        SELECT id, username, email, password_hash
+        FROM users
+        WHERE email = ?
+        """,
+        (email,)
+    ).fetchone()
+
+    conn.close()
+
+    if not user or not check_password_hash(user["password_hash"], password):
+        return "Invalid email or password.", 401
+
+    session["user_id"] = user["id"]
+    session["username"] = user["username"]
+    session["email"] = user["email"]
+
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/account/change-password", methods=["GET", "POST"])
+def change_password():
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    if request.method == "GET":
+        return render_template("change_password.html")
+
+    current_password = request.form.get("current_password", "")
+    new_password = request.form.get("new_password", "")
+    confirm_password = request.form.get("confirm_password", "")
+
+    if not current_password or not new_password or not confirm_password:
+        return "All password fields are required.", 400
+
+    if len(new_password) < 8:
+        return "New password must be at least 8 characters.", 400
+
+    if new_password != confirm_password:
+        return "New passwords do not match.", 400
+
+    conn = get_db()
+
+    user = conn.execute(
+        """
+        SELECT password_hash
+        FROM users
+        WHERE id = ?
+        """,
+        (session["user_id"],)
+    ).fetchone()
+
+    if not user or not check_password_hash(
+        user["password_hash"],
+        current_password
+    ):
+        conn.close()
+        return "Current password is incorrect.", 401
+
+    new_password_hash = generate_password_hash(new_password)
+
+    conn.execute(
+        """
+        UPDATE users
+        SET password_hash = ?
+        WHERE id = ?
+        """,
+        (new_password_hash, session["user_id"])
+    )
+
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("account"))
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "GET":
+        return render_template("register.html")
+
+    username = request.form.get("username", "").strip()
+    email = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "")
+
+    if len(username) < 3:
+        return "Username must be at least 3 characters.", 400
+
+    if len(password) < 8:
+        return "Password must be at least 8 characters.", 400
+
+    if not email or "@" not in email:
+        return "Please enter a valid email.", 400
+
+    password_hash = generate_password_hash(password)
+
+    conn = get_db()
+
+    try:
+        conn.execute(
+            """
+            INSERT INTO users (username, email, password_hash)
+            VALUES (?, ?, ?)
+            """,
+            (username, email, password_hash)
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        conn.close()
+        return "Username or email already exists.", 409
+
+    conn.close()
+
+    return redirect(url_for("login"))
+
+@app.route("/")
+def dashboard():
+    conn = get_db()
+
+    total_games = conn.execute(
+        "SELECT COUNT(*) FROM games"
+    ).fetchone()[0]
+
+    free_games = conn.execute(
+        "SELECT COUNT(*) FROM games WHERE is_free = 1"
+    ).fetchone()[0]
+
+    on_sale = conn.execute(
+        """
+        SELECT COUNT(*)
+        FROM games
+        WHERE discount_percent > 0
+        """
+    ).fetchone()[0]
+
+    biggest_discounts = conn.execute(
+        """
+        SELECT *
+        FROM games
+        WHERE discount_percent >= 50
+          AND current_price > 0
+          AND recommendation_count >= 1000
+        ORDER BY RANDOM()
+        LIMIT 6
+        """
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "dashboard.html",
+        total_games=total_games,
+        free_games=free_games,
+        on_sale=on_sale,
+        biggest_discounts=biggest_discounts
+    )
+@app.route("/deals")
+def deals():
+    conn = get_db()
+
+    games = conn.execute(
+        """
+        SELECT *
+        FROM games
+        WHERE discount_percent > 0
+          AND current_price > 0
+        ORDER BY discount_percent DESC, current_price ASC
+        LIMIT 100
+        """
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "deals.html",
+        games=games
+    )
+
+
+
+@app.route("/api/games")
+def api_games():
+    page = request.args.get("page", 1, type=int)
+    query = request.args.get("q", "").strip()
+
+    limit = 50
+    offset = (page - 1) * limit
+
+    conn = get_db()
+
+    if query:
+        search_pattern = f"%{query}%"
+
+        games = conn.execute("""
+            SELECT app_id, name, type, developer,
+                   current_price, discount_percent,
+                   header_image, is_free
+            FROM games
+            WHERE name LIKE ? COLLATE NOCASE
+            ORDER BY name
+            LIMIT ? OFFSET ?
+        """, (search_pattern, limit, offset)).fetchall()
+
+        total = conn.execute("""
+            SELECT COUNT(*)
+            FROM games
+            WHERE name LIKE ? COLLATE NOCASE
+        """, (search_pattern,)).fetchone()[0]
+
+    else:
+
+        games = conn.execute("""
+            SELECT app_id, name, type, developer,
+                   current_price, discount_percent,
+                   header_image, is_free
+            FROM games
+            WHERE tracked = 1
+            ORDER BY popularity_score DESC,
+                     recommendation_count DESC,
+                     name
+            LIMIT ? OFFSET ?
+        """, (limit, offset)).fetchall()
+
+        total = conn.execute(
+            "SELECT COUNT(*) FROM games WHERE tracked = 1"
+        ).fetchone()[0]
+
+    conn.close()
+
+    result = []
+
+    for game in games:
+        result.append({
+            "app_id": game["app_id"],
+            "name": game["name"],
+            "type": game["type"],
+            "developer": game["developer"],
+            "current_price": game["current_price"],
+            "discount_percent": game["discount_percent"],
+            "header_image": game["header_image"],
+            "is_free": game["is_free"]
+        })
+
+    return jsonify({
+        "games": result,
+        "page": page,
+        "has_more": offset + len(games) < total
+    })
+
+
+@app.route("/search")
+def search():
+    query = request.args.get("q", "").strip()
+
+    conn = get_db()
+
+    games = conn.execute(
+        """
+        SELECT *
+        FROM games
+        WHERE name LIKE ?
+        ORDER BY name
+        LIMIT 50
+        """,
+        (f"%{query}%",)
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "search.html",
+        games=games,
+        query=query
+    )
+
+
+@app.route("/wishlist/add/<int:app_id>", methods=["POST"])
+def add_wishlist(app_id):
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    conn = get_db()
+
+    game = conn.execute(
+        "SELECT app_id FROM games WHERE app_id = ?",
+        (app_id,)
+    ).fetchone()
+
+    if not game:
+        conn.close()
+        return "Game not found", 404
+
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO wishlists (user_id, app_id)
+        VALUES (?, ?)
+        """,
+        (session["user_id"], app_id)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("game", app_id=app_id))
+
+
+@app.route("/wishlist/remove/<int:app_id>", methods=["POST"])
+def remove_wishlist(app_id):
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    conn = get_db()
+
+    conn.execute(
+        """
+        DELETE FROM wishlists
+        WHERE user_id = ? AND app_id = ?
+        """,
+        (session["user_id"], app_id)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("game", app_id=app_id))
+
+
+@app.route("/wishlist")
+def wishlist():
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    conn = get_db()
+
+    wishlist_games = conn.execute(
+        """
+        SELECT
+            g.*,
+            w.created_at AS wishlist_added_at
+        FROM wishlists w
+        JOIN games g ON g.app_id = w.app_id
+        WHERE w.user_id = ?
+        ORDER BY w.created_at DESC
+        """,
+        (session["user_id"],)
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "wishlist.html",
+        wishlist_games=wishlist_games
+    )
+
+
+@app.route("/game/<int:app_id>")
+def game(app_id):
+    country = request.headers.get("CF-IPCountry", "US").upper()
+
+    region_map = {
+        "AZ": "AZ",
+        "US": "US",
+    }
+
+    region = region_map.get(country, "US")
+
+    conn = get_db()
+
+    game = conn.execute(
+        "SELECT * FROM games WHERE app_id = ?",
+        (app_id,)
+    ).fetchone()
+
+    history = conn.execute(
+        """
+        SELECT price, original_price, discount_percent, recorded_at
+        FROM price_history
+        WHERE app_id = ?
+        ORDER BY recorded_at
+        """,
+        (app_id,)
+    ).fetchall()
+
+    steam_price = conn.execute(
+        """
+        SELECT current_price,
+               original_price,
+               discount_percent,
+               currency
+        FROM steam_regional_prices
+        WHERE app_id = ? AND region = ?
+        """,
+        (app_id, region)
+    ).fetchone()
+
+    if steam_price is None:
+        steam_price = {
+            "current_price": game["current_price"],
+            "original_price": game["original_price"],
+            "discount_percent": game["discount_percent"],
+            "currency": game["currency"]
+        }
+
+    store_prices = conn.execute(
+        """
+        SELECT
+            s.name AS store_name,
+            s.slug AS store_slug,
+            sg.store_url,
+            sp.current_price,
+            sp.original_price,
+            sp.discount_percent,
+            sp.currency,
+            sp.available,
+            sp.last_updated
+        FROM store_games sg
+        JOIN stores s ON s.id = sg.store_id
+        LEFT JOIN store_prices sp ON sp.store_game_id = sg.id
+        WHERE sg.app_id = ?
+
+        UNION ALL
+
+        SELECT
+            s.name AS store_name,
+            s.slug AS store_slug,
+            sg.store_url,
+            sp.current_price,
+            sp.original_price,
+            sp.discount_percent,
+            sp.currency,
+            sp.available,
+            sp.last_updated
+        FROM game_matches gm
+        JOIN store_games sg ON sg.id = gm.store_game_id
+        JOIN stores s ON s.id = sg.store_id
+        LEFT JOIN store_prices sp ON sp.store_game_id = sg.id
+        WHERE gm.canonical_app_id = ?
+
+        """,
+        (app_id, app_id)
+    ).fetchall()
+
+    # En ucuz real qiymeti tap
+    available_prices = [
+        row["current_price"]
+        for row in store_prices
+        if row["available"]
+        and row["current_price"] is not None
+    ]
+
+    best_price = min(available_prices) if available_prices else None
+
+    wishlist_added = False
+
+    if session.get("user_id"):
+        wishlist_added = conn.execute(
+            """
+            SELECT 1
+            FROM wishlists
+            WHERE user_id = ? AND app_id = ?
+            """,
+            (session["user_id"], app_id)
+        ).fetchone() is not None
+
+    conn.close()
+
+    if not game:
+        return "Game not found", 404
+
+    return render_template(
+        "game.html",
+        game=game,
+        history=history,
+        store_prices=store_prices,
+        best_price=best_price,
+        wishlist_added=wishlist_added,
+        steam_price=steam_price
+    )
+
+
+if __name__ == "__main__":
+    app.run(
+        host="127.0.0.1",
+        port=5000,
+        debug=False
+    )
