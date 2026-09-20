@@ -320,9 +320,19 @@
 
     .sp-sidebar {
         width: 240px;
+        height: 100dvh;
+        max-height: 100dvh;
         transform: translateX(-100%);
         transition: transform .25s ease;
         box-shadow: 12px 0 35px rgba(0,0,0,.35);
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-bottom: 20px;
+    }
+
+    .sp-account {
+        margin-top: 28px;
+        flex-shrink: 0;
     }
 
     .sp-sidebar.sp-open {
