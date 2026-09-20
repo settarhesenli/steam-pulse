@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workers — Steam Pulse Admin</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+
+<style>
+.workers-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.worker-card {
+    background: #0b1924;
+    border: 1px solid #1a2d3c;
+    border-radius: 14px;
+    padding: 22px;
+}
+
+.worker-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.worker-name {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.worker-description {
+    margin-top: 6px;
+    color: #718999;
+    font-size: 13px;
+}
+
+.worker-status {
+    min-width: 105px;
+    height: 36px;
+    padding: 0 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 20px;
+
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.status-active {
+    background: #103c2b;
+    color: #4de39a;
+}
+
+.status-inactive {
+    background: #3a1519;
+    color: #ff6f78;
+}
+
+.status-other {
+    background: #302817;
+    color: #e9bf62;
+}
+
+.worker-meta {
+    margin-top: 18px;
+    padding-top: 15px;
+    border-top: 1px solid #182c39;
+    color: #7890a0;
+    font-size: 12px;
+    line-height: 1.8;
+}
+
+.worker-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+.worker-actions form {
+    margin: 0;
+}
+
+.worker-btn {
+    border: 1px solid #263d4d;
+    background: #0d202d;
+    color: #b9cbd6;
+    border-radius: 7px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.worker-btn:hover {
+    background: #143146;
+    color: #fff;
+}
+
+.start-btn {
+    color: #4de39a;
+}
+
+.stop-btn {
+    color: #ff747c;
+}
+
+.restart-btn {
+    color: #4db5ff;
+}
+
+.enable-btn {
+    color: #8ed7ff;
+}
+
+.disable-btn {
+    color: #ffbd6b;
+}
+
+.logs-btn {
+    color: #d5b8ff;
+}
+
+.logs-panel {
+    display: none;
+    margin-top: 15px;
+    background: #071019;
+    border: 1px solid #172a38;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.logs-panel pre {
+    margin: 0;
+    max-height: 300px;
+    overflow: auto;
+    color: #9eb2bf;
+    font-family: monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+@media (max-width: 900px) {
+    .workers-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="admin-layout">
+
+{% include "admin/partials/sidebar.html" %}
+
+<main class="admin-main">
+
+<header class="admin-header">
+    <div>
+        <h1>Workers</h1>
+        <p>Manage and monitor background services.</p>
+    </div>
+
+    <div class="live">LIVE DATA</div>
+</header>
+
+<div class="workers-grid">
+
+{% for worker in workers %}
+
+<div class="worker-card">
+
+    <div class="worker-top">
+
+        <div>
+            <div class="worker-name">
+                {{ worker.name }}
+            </div>
+
+            <div class="worker-description">
+                {{ worker.description }}
+            </div>
+        </div>
+
+        {% if worker.status == "active" %}
+
+            <div class="worker-status status-active">
+                ● ACTIVE
+            </div>
+
+        {% elif worker.status in ["inactive", "failed"] %}
+
+            <div class="worker-status status-inactive">
+                ● {{ worker.status|upper }}
+            </div>
+
+        {% else %}
+
+            <div class="worker-status status-other">
+                ● {{ worker.status|upper }}
+            </div>
+
+        {% endif %}
+
+    </div>
+
+    <div class="worker-meta">
+
+        <div>
+            Service:
+            <strong>{{ worker.service }}</strong>
+        </div>
+
+        <div>
+            Sub-state:
+            <strong>{{ worker.sub_state }}</strong>
+        </div>
+
+        <div>
+            Boot:
+            <strong>{{ worker.enabled }}</strong>
+        </div>
+
+        <div>
+            Started:
+            <strong>{{ worker.active_since or "—" }}</strong>
+        </div>
+
+    </div>
+
+    <div class="worker-actions">
+
+        <form method="POST"
+              action="/admin/workers/{{ worker.service }}/action">
+
+            <input type="hidden"
+                   name="csrf_token"
+                   value="{{ csrf_token() }}">
+
+            <input type="hidden"
+                   name="action"
+                   value="start">
+
+            <button class="worker-btn start-btn">
+                ▶ Start
+            </button>
+
+        </form>
+
+
+        <form method="POST"
+              action="/admin/workers/{{ worker.service }}/action">
+
+            <input type="hidden"
+                   name="csrf_token"
+                   value="{{ csrf_token() }}">
+
+            <input type="hidden"
+                   name="action"
+                   value="stop">
+
+            <button class="worker-btn stop-btn">
+                ■ Stop
+            </button>
+
+        </form>
+
+
+        <form method="POST"
+              action="/admin/workers/{{ worker.service }}/action">
+
+            <input type="hidden"
+                   name="csrf_token"
+                   value="{{ csrf_token() }}">
+
+            <input type="hidden"
+                   name="action"
+                   value="restart">
+
+            <button class="worker-btn restart-btn">
+                ↻ Restart
+            </button>
+
+        </form>
+
+
+        <form method="POST"
+              action="/admin/workers/{{ worker.service }}/action">
+
+            <input type="hidden"
+                   name="csrf_token"
+                   value="{{ csrf_token() }}">
+
+            <input type="hidden"
+                   name="action"
+                   value="enable">
+
+            <button class="worker-btn enable-btn">
+                ⚡ Enable
+            </button>
+
+        </form>
+
+
+        <form method="POST"
+              action="/admin/workers/{{ worker.service }}/action">
+
+            <input type="hidden"
+                   name="csrf_token"
+                   value="{{ csrf_token() }}">
+
+            <input type="hidden"
+                   name="action"
+                   value="disable">
+
+            <button class="worker-btn disable-btn">
+                Disable
+            </button>
+
+        </form>
+
+
+        <button
+            class="worker-btn logs-btn"
+            onclick="loadLogs('{{ worker.service }}', this)">
+            📋 Logs
+        </button>
+
+    </div>
+
+    <div class="logs-panel">
+        <pre></pre>
+    </div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</main>
+</div>
+
+<script>
+async function loadLogs(service, button) {
+
+    const card = button.closest(".worker-card");
+    const panel = card.querySelector(".logs-panel");
+    const pre = panel.querySelector("pre");
+
+    if (panel.style.display === "block") {
+        panel.style.display = "none";
+        button.textContent = "📋 Logs";
+        return;
+    }
+
+    button.textContent = "Loading...";
+
+    try {
+        const response = await fetch(
+            "/admin/workers/" +
+            encodeURIComponent(service) +
+            "/logs"
+        );
+
+        const data = await response.json();
+
+        if (data.error) {
+            pre.textContent = data.error;
+        } else {
+            pre.textContent = data.logs || "No logs available.";
+        }
+
+        panel.style.display = "block";
+        button.textContent = "✕ Hide Logs";
+
+    } catch (error) {
+        pre.textContent = "Failed to load logs.";
+        panel.style.display = "block";
+        button.textContent = "✕ Hide Logs";
+    }
+}
+</script>
+
+</body>
+</html>

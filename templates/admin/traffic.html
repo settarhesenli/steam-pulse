@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic — Steam Pulse Admin</title>
+
+    <style>
+        @import url("/static/admin.css");
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .card {
+            background: #0b1924;
+            border: 1px solid #1a2d3c;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .label {
+            color: #7891a2;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .sub {
+            color: #36adff;
+            font-size: 12px;
+            margin-top: 7px;
+        }
+
+        .section-title {
+            margin: 30px 0 15px;
+            font-size: 17px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 18px;
+        }
+
+        .panel {
+            background: #0b1924;
+            border: 1px solid #1a2d3c;
+            border-radius: 12px;
+            padding: 22px;
+        }
+
+        .panel-title {
+            color: #7891a2;
+            font-size: 12px;
+            letter-spacing: .8px;
+            margin-bottom: 20px;
+        }
+
+        .bars {
+            height: 250px;
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .bar-wrap {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .bar {
+            width: 100%;
+            min-height: 3px;
+            background: #2296e8;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .bar-label {
+            color: #60798a;
+            font-size: 9px;
+            margin-top: 6px;
+            text-align: center;
+        }
+
+        .page-row,
+        .status-row,
+        .method-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #162733;
+            font-size: 13px;
+        }
+
+        .page-row:last-child,
+        .status-row:last-child,
+        .method-row:last-child {
+            border-bottom: 0;
+        }
+
+        .page {
+            color: #b8c9d5;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 75%;
+        }
+
+        .count {
+            color: #4db5ff;
+            font-weight: 700;
+        }
+
+        .status-ok {
+            color: #55d68a;
+        }
+
+        .status-error {
+            color: #ff7373;
+        }
+
+        .compare {
+            color: #7891a2;
+            font-size: 12px;
+        }
+
+        @media (max-width: 1100px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="admin-layout">
+
+    {% include "admin/partials/sidebar.html" %}
+
+    <main class="admin-main">
+
+        <header class="admin-header">
+            <div>
+                <h1>Traffic Analytics</h1>
+                <p>Detailed Steam Pulse website traffic and performance.</p>
+            </div>
+
+            <div class="live">LIVE DATA</div>
+        </header>
+
+        <section class="stats">
+
+            <div class="card">
+                <div class="label">TOTAL VISITS</div>
+                <div class="value">{{ "{:,}".format(total_visits) }}</div>
+                <div class="sub">All recorded requests</div>
+            </div>
+
+            <div class="card">
+                <div class="label">TODAY</div>
+                <div class="value">{{ "{:,}".format(today_visits) }}</div>
+                <div class="sub">
+                    Yesterday: {{ yesterday_visits }}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="label">UNIQUE VISITORS</div>
+                <div class="value">{{ "{:,}".format(unique_visitors) }}</div>
+                <div class="sub">Hashed visitors</div>
+            </div>
+
+            <div class="card">
+                <div class="label">AVG RESPONSE</div>
+                <div class="value">{{ avg_response }} ms</div>
+                <div class="sub">Server response</div>
+            </div>
+
+        </section>
+
+        <div class="section-title">Last 24 Hours</div>
+
+        <div class="panel">
+
+            <div class="panel-title">REQUESTS BY HOUR</div>
+
+            {% set max_visits = hourly|map(attribute='visits')|max|default(1) %}
+
+            <div class="bars">
+
+                {% for item in hourly %}
+
+                <div class="bar-wrap"
+                     title="{{ item.hour }} — {{ item.visits }} visits">
+
+                    <div style="width:100%;text-align:center;">
+
+                        <div class="bar"
+                             style="height: {{ ((item.visits / max_visits) * 220)|round }}px;">
+                        </div>
+
+                        <div class="bar-label">
+                            {{ item.hour }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            {% if not hourly %}
+                <div style="color:#708797;text-align:center;padding:80px 0;">
+                    No traffic data yet.
+                </div>
+            {% endif %}
+
+        </div>
+
+        <div class="section-title">Pages & Requests</div>
+
+        <section class="grid">
+
+            <div class="panel">
+
+                <div class="panel-title">TOP PAGES</div>
+
+                {% for page in top_pages %}
+
+                <div class="page-row">
+                    <div class="page">{{ page.path }}</div>
+                    <div class="count">{{ page.views }}</div>
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            <div class="panel">
+
+                <div class="panel-title">HTTP METHODS</div>
+
+                {% for method in methods %}
+
+                <div class="method-row">
+                    <div>{{ method.method }}</div>
+                    <div class="count">{{ method.count }}</div>
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+        <div class="section-title">HTTP Status</div>
+
+        <section class="stats">
+
+            <div class="card">
+                <div class="label">4XX ERRORS</div>
+                <div class="value status-error">{{ errors_4xx }}</div>
+                <div class="sub">Client-side errors</div>
+            </div>
+
+            <div class="card">
+                <div class="label">5XX ERRORS</div>
+                <div class="value status-error">{{ errors_5xx }}</div>
+                <div class="sub">Server-side errors</div>
+            </div>
+
+        </section>
+
+        <div class="panel" style="margin-top:18px;">
+
+            <div class="panel-title">STATUS CODES</div>
+
+            {% for status in status_codes %}
+
+            <div class="status-row">
+
+                <div>
+                    {% if status.status_code >= 500 %}
+                        <span class="status-error">
+                    {% elif status.status_code >= 400 %}
+                        <span class="status-error">
+                    {% else %}
+                        <span class="status-ok">
+                    {% endif %}
+
+                    {{ status.status_code }}
+
+                    </span>
+                </div>
+
+                <div class="count">
+                    {{ status.count }}
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </main>
+</div>
+
+</body>
+</html>

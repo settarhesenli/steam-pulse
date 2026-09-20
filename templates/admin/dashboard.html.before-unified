@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steam Pulse — Admin</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #07111a;
+            color: #e8f1f7;
+        }
+
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 230px;
+            background: #050c13;
+            border-right: 1px solid #1b2b39;
+            padding: 24px 16px;
+            position: fixed;
+            inset: 0 auto 0 0;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 800;
+            color: #39a9ff;
+            margin-bottom: 35px;
+        }
+
+        .admin-label {
+            color: #7f96a8;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+        }
+
+        .nav a {
+            display: block;
+            color: #a9bac7;
+            text-decoration: none;
+            padding: 11px 12px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+        }
+
+        .nav a:hover,
+        .nav a.active {
+            background: #102231;
+            color: #45b3ff;
+        }
+
+        .main {
+            margin-left: 230px;
+            width: calc(100% - 230px);
+            padding: 30px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        .live {
+            color: #55d68a;
+            font-size: 13px;
+        }
+
+        .live::before {
+            content: "";
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #55d68a;
+            border-radius: 50%;
+            margin-right: 7px;
+        }
+
+        .section-title {
+            margin: 30px 0 15px;
+            font-size: 17px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .card {
+            background: #0b1924;
+            border: 1px solid #1a2d3c;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .card-label {
+            color: #7f96a8;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #f1f7fb;
+        }
+
+        .card-sub {
+            margin-top: 7px;
+            color: #52b7ff;
+            font-size: 12px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 18px;
+        }
+
+        .chart {
+            min-height: 300px;
+        }
+
+        .bars {
+            height: 230px;
+            display: flex;
+            align-items: flex-end;
+            gap: 7px;
+            padding-top: 20px;
+        }
+
+        .bar-wrap {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .bar {
+            width: 100%;
+            max-width: 24px;
+            min-height: 3px;
+            background: #2296e8;
+            border-radius: 5px 5px 0 0;
+            transition: height .3s ease;
+        }
+
+        .page-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 11px 0;
+            border-bottom: 1px solid #162733;
+            font-size: 13px;
+        }
+
+        .page-row:last-child {
+            border-bottom: 0;
+        }
+
+        .page-name {
+            color: #b8c9d5;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 75%;
+        }
+
+        .page-count {
+            color: #4db5ff;
+            font-weight: 700;
+        }
+
+        .errors {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .error-box {
+            text-align: center;
+            padding: 18px;
+            border-radius: 10px;
+            background: #091620;
+            border: 1px solid #172b39;
+        }
+
+        .error-number {
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+        .error-label {
+            color: #8095a5;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .footer-info {
+            margin-top: 30px;
+            color: #60798a;
+            font-size: 12px;
+        }
+
+        @media (max-width: 1000px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .sidebar {
+                position: static;
+                width: 100%;
+                height: auto;
+            }
+
+            .admin-layout {
+                display: block;
+            }
+
+            .main {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .topbar {
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="admin-layout">
+
+    <aside class="sidebar">
+        <div class="logo">STEAM PULSE</div>
+
+        <div class="admin-label">Administration</div>
+
+        <nav class="nav">
+            <a href="/admin" class="active">Dashboard</a>
+            <a href="/admin/users">Users</a>
+            <a href="/">Back to Site</a>
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+
+        <div class="topbar">
+            <div>
+                <h1>Admin Dashboard</h1>
+                <div style="color:#708898;margin-top:6px;font-size:13px;">
+                    Steam Pulse system overview
+                </div>
+            </div>
+
+            <div class="live">LIVE DATA</div>
+        </div>
+
+        <div class="section-title">Traffic Overview</div>
+
+        <section class="stats">
+
+            <div class="card">
+                <div class="card-label">TOTAL VISITS</div>
+                <div class="card-value">{{ "{:,}".format(total_visits) }}</div>
+                <div class="card-sub">All recorded requests</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">UNIQUE VISITORS</div>
+                <div class="card-value">{{ "{:,}".format(unique_visitors) }}</div>
+                <div class="card-sub">Unique hashed IPs</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">TODAY</div>
+                <div class="card-value">{{ "{:,}".format(today_visits) }}</div>
+                <div class="card-sub">Visits today</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">LAST 7 DAYS</div>
+                <div class="card-value">{{ "{:,}".format(last_7_days) }}</div>
+                <div class="card-sub">Recent traffic</div>
+            </div>
+
+        </section>
+
+        <div class="section-title">Performance</div>
+
+        <section class="stats">
+
+            <div class="card">
+                <div class="card-label">AVG RESPONSE</div>
+                <div class="card-value">{{ avg_response }} ms</div>
+                <div class="card-sub">Average response time</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">4XX ERRORS</div>
+                <div class="card-value">{{ errors_4xx }}</div>
+                <div class="card-sub">Client errors</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">5XX ERRORS</div>
+                <div class="card-value">{{ errors_5xx }}</div>
+                <div class="card-sub">Server errors</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">REGISTERED USERS</div>
+                <div class="card-value">{{ "{:,}".format(total_users) }}</div>
+                <div class="card-sub">Total accounts</div>
+            </div>
+
+        </section>
+
+        <div class="section-title">Traffic & Pages</div>
+
+        <section class="grid-2">
+
+            <div class="card chart">
+                <div class="card-label">LAST 24 HOURS</div>
+
+                <div class="bars">
+                    {% set max_visits = traffic_24h|map(attribute='visits')|max|default(1) %}
+
+                    {% for item in traffic_24h %}
+                        <div class="bar-wrap"
+                             title="{{ item.hour }} — {{ item.visits }} visits">
+
+                            <div class="bar"
+                                 style="height: {{ ((item.visits / max_visits) * 100)|round }}%;"></div>
+
+                        </div>
+                    {% endfor %}
+                </div>
+
+                {% if not traffic_24h %}
+                    <div style="color:#718797;text-align:center;padding-top:80px;">
+                        No traffic data yet.
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="card">
+                <div class="card-label">TOP PAGES</div>
+
+                {% for page in top_pages %}
+                    <div class="page-row">
+                        <div class="page-name">{{ page.path }}</div>
+                        <div class="page-count">{{ page.views }}</div>
+                    </div>
+                {% endfor %}
+
+                {% if not top_pages %}
+                    <div style="color:#718797;padding-top:30px;">
+                        No page data yet.
+                    </div>
+                {% endif %}
+            </div>
+
+        </section>
+
+        <div class="section-title">Database</div>
+
+        <section class="stats">
+
+            <div class="card">
+                <div class="card-label">TOTAL GAMES</div>
+                <div class="card-value">{{ "{:,}".format(total_games) }}</div>
+                <div class="card-sub">Games in database</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">TRAFFIC RECORDS</div>
+                <div class="card-value">{{ "{:,}".format(total_visits) }}</div>
+                <div class="card-sub">Analytics events</div>
+            </div>
+
+        </section>
+
+        <div class="footer-info">
+            Steam Pulse Administration • Traffic data is collected server-side.
+        </div>
+
+    </main>
+</div>
+
+</body>
+</html>

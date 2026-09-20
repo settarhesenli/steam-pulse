@@ -1,0 +1,37 @@
+<aside class="admin-sidebar">
+
+    <div class="admin-brand">
+        <div>🎮 STEAM</div>
+        <span>PULSE ADMIN</span>
+    </div>
+
+    <div class="admin-section-title">ADMINISTRATION</div>
+
+    <nav>
+        <a href="/admin" class="{% if request.path == '/admin' %}active{% endif %}">
+            📊 Overview
+        </a>
+
+        <a href="/admin/users" class="{% if request.path == '/admin/users' %}active{% endif %}">
+            👥 Users
+        </a>
+
+        <a href="#" class="disabled">🎮 Games</a>
+        <a href="#" class="disabled">💰 Prices</a>
+    </nav>
+
+    <div class="admin-section-title monitoring-title">MONITORING</div>
+
+    <nav>
+        <a href="/admin/traffic" class="{% if request.path == "/admin/traffic" %}active{% endif %}">📡 Traffic</a>
+        <a href="/admin/workers" class="{% if request.path == "/admin/workers" %}active{% endif %}">⚙️ Workers</a>
+        <a href="#" class="disabled">📋 Logs</a>
+        <a href="#" class="disabled">🖥️ System</a>
+    </nav>
+
+    <div class="admin-bottom">
+        <a href="/">← Back to Site</a>
+        <a href="/logout">↪ Logout</a>
+    </div>
+
+</aside>

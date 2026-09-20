@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users — Steam Pulse Admin</title>
+
+    <style>
+        @import url("/static/admin.css");
+
+        .users-card {
+            background: #08151f;
+            border: 1px solid #1b2d3b;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .users-table th {
+            text-align: left;
+            padding: 18px 22px;
+            color: #71899a;
+            font-size: 11px;
+            letter-spacing: 1.3px;
+            background: #091722;
+        }
+
+        .users-table td {
+            padding: 20px 22px;
+            border-top: 1px solid #172a38;
+            color: #d8e4eb;
+            font-size: 14px;
+        }
+
+        .username {
+            font-weight: 700;
+            color: #f1f7fb;
+        }
+
+        .id {
+            color: #6d8290;
+        }
+
+        .role-admin {
+            color: #43e39b;
+            font-weight: 700;
+        }
+
+        .role-user {
+            color: #718899;
+        }
+
+        .wishlist {
+            color: #4db5ff;
+        }
+
+        @media (max-width: 800px) {
+            .users-card {
+                overflow-x: auto;
+            }
+
+            .users-table {
+                min-width: 700px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="admin-layout">
+
+    {% include "admin/partials/sidebar.html" %}
+
+    <main class="admin-main">
+
+        <header class="admin-header">
+            <div>
+                <h1>Users</h1>
+                <p>Registered Steam Pulse users and account statistics.</p>
+            </div>
+
+            <div class="live">LIVE DATA</div>
+        </header>
+
+        <div class="users-card">
+
+            <table class="users-table">
+
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>USERNAME</th>
+                        <th>EMAIL</th>
+                        <th>REGISTERED</th>
+                        <th>WISHLIST</th>
+                        <th>ROLE</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for user in users %}
+
+                    <tr>
+                        <td class="id">#{{ user.id }}</td>
+
+                        <td class="username">
+                            {{ user.username }}
+                        </td>
+
+                        <td>
+                            {{ user.email }}
+                        </td>
+
+                        <td>
+                            {{ user.created_at }}
+                        </td>
+
+                        <td class="wishlist">
+                            {{ user.wishlist_count }}
+                        </td>
+
+                        <td>
+                            {% if user.is_admin %}
+                                <span class="role-admin">ADMIN</span>
+                            {% else %}
+                                <span class="role-user">USER</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </main>
+</div>
+
+</body>
+</html>

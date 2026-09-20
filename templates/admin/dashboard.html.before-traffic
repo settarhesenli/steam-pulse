@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Dashboard — Steam Pulse</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #060b11;
+            color: #e8f1f8;
+            font-family: Inter, Arial, sans-serif;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 240px;
+            flex-shrink: 0;
+            background: #07111a;
+            border-right: 1px solid #1b2b39;
+            padding: 26px 16px;
+            position: fixed;
+            inset: 0 auto 0 0;
+        }
+
+        .logo {
+            display: block;
+            margin: 4px 10px 40px;
+            font-size: 24px;
+            font-weight: 900;
+        }
+
+        .logo span {
+            display: block;
+            color: #35b6ff;
+        }
+
+        .section {
+            margin: 0 12px 10px;
+            color: #536b80;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 28px;
+        }
+
+        .nav a {
+            padding: 12px 14px;
+            border-radius: 9px;
+            color: #91a5b7;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .nav a:hover,
+        .nav a.active {
+            background: #102536;
+            color: #42baff;
+        }
+
+        .main {
+            margin-left: 240px;
+            width: calc(100% - 240px);
+            padding: 34px;
+        }
+
+        .header {
+            margin-bottom: 28px;
+        }
+
+        .eyebrow {
+            color: #35b6ff;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+
+        h1 {
+            margin: 8px 0 6px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #71879a;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+        }
+
+        .card {
+            background: #0a131d;
+            border: 1px solid #1b2b39;
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .stat-label {
+            color: #6e8294;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .stat-value {
+            margin-top: 8px;
+            font-size: 28px;
+            font-weight: 900;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 16px;
+            margin-top: 18px;
+        }
+
+        .card-title {
+            margin-bottom: 16px;
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .worker {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 11px 0;
+            border-bottom: 1px solid #172531;
+        }
+
+        .worker:last-child {
+            border-bottom: 0;
+        }
+
+        .status {
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .active {
+            color: #42eaa7;
+        }
+
+        .inactive {
+            color: #ff667a;
+        }
+
+        .unknown {
+            color: #e8b84a;
+        }
+
+        .user {
+            display: grid;
+            grid-template-columns: 1fr 1fr 110px;
+            gap: 10px;
+            padding: 12px 0;
+            border-bottom: 1px solid #172531;
+            font-size: 13px;
+        }
+
+        .muted {
+            color: #6e8294;
+        }
+
+        .system {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        @media(max-width: 1000px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media(max-width: 767px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px 14px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .user {
+                grid-template-columns: 1fr;
+            }
+
+            .system {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media(max-width: 480px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+
+        <a href="/admin" class="logo">
+            🎮 STEAM
+            <span>PULSE ADMIN</span>
+        </a>
+
+        <div class="section">ADMINISTRATION</div>
+
+        <nav class="nav">
+            <a href="/admin" class="active">📊 Overview</a>
+            <a href="/admin/users">👥 Users</a>
+            <a href="#">🎮 Games</a>
+            <a href="#">💰 Prices</a>
+        </nav>
+
+        <div class="section">MONITORING</div>
+
+        <nav class="nav">
+            <a href="#">📡 Traffic</a>
+            <a href="#">⚙ Workers</a>
+            <a href="#">📝 Logs</a>
+            <a href="#">🖥 System</a>
+        </nav>
+
+        <div class="nav">
+            <a href="/">← Back to site</a>
+        </div>
+
+    </aside>
+
+    <main class="main">
+
+        <header class="header">
+            <div class="eyebrow">ADMINISTRATION</div>
+            <h1>System Overview</h1>
+            <div class="subtitle">
+                Steam Pulse platform management and database overview.
+            </div>
+        </header>
+
+        <section class="stats">
+
+            <div class="card">
+                <div class="stat-label">USERS</div>
+                <div class="stat-value">{{ "{:,}".format(stats.users) }}</div>
+            </div>
+
+            <div class="card">
+                <div class="stat-label">GAMES</div>
+                <div class="stat-value">{{ "{:,}".format(stats.games) }}</div>
+            </div>
+
+            <div class="card">
+                <div class="stat-label">WISHLISTS</div>
+                <div class="stat-value">{{ "{:,}".format(stats.wishlists) }}</div>
+            </div>
+
+            <div class="card">
+                <div class="stat-label">STORES</div>
+                <div class="stat-value">{{ "{:,}".format(stats.stores) }}</div>
+            </div>
+
+            <div class="card">
+                <div class="stat-label">STORE GAMES</div>
+                <div class="stat-value">{{ "{:,}".format(stats.store_games) }}</div>
+            </div>
+
+            <div class="card">
+                <div class="stat-label">STORE PRICES</div>
+                <div class="stat-value">{{ "{:,}".format(stats.store_prices) }}</div>
+            </div>
+
+            <div class="card">
+                <div class="stat-label">PRICE HISTORY</div>
+                <div class="stat-value">{{ "{:,}".format(stats.price_history) }}</div>
+            </div>
+
+            <div class="card">
+                <div class="stat-label">GAME MATCHES</div>
+                <div class="stat-value">{{ "{:,}".format(stats.game_matches) }}</div>
+            </div>
+
+        </section>
+
+        <section class="content-grid">
+
+            <div class="card">
+                <div class="card-title">⚙ Workers</div>
+
+                {% for worker in workers %}
+                    <div class="worker">
+                        <span>{{ worker.name }}</span>
+
+                        <span class="status
+                            {% if worker.status == 'active' %}
+                                active
+                            {% elif worker.status == 'inactive' or worker.status == 'failed' %}
+                                inactive
+                            {% else %}
+                                unknown
+                            {% endif %}
+                        ">
+                            ● {{ worker.status|upper }}
+                        </span>
+                    </div>
+                {% endfor %}
+
+            </div>
+
+            <div class="card">
+
+                <div class="card-title">🖥 System</div>
+
+                <div class="system">
+
+                    <div>
+                        <div class="muted">Database</div>
+                        <strong>
+                            {{ "%.2f"|format(db_size / 1024 / 1024) }} MB
+                        </strong>
+                    </div>
+
+                    <div>
+                        <div class="muted">Disk Total</div>
+                        <strong>
+                            {{ "%.1f"|format(disk.total / 1024 / 1024 / 1024) }} GB
+                        </strong>
+                    </div>
+
+                    <div>
+                        <div class="muted">Disk Used</div>
+                        <strong>
+                            {{ "%.1f"|format(disk.used / 1024 / 1024 / 1024) }} GB
+                        </strong>
+                    </div>
+
+                    <div>
+                        <div class="muted">Disk Free</div>
+                        <strong>
+                            {{ "%.1f"|format(disk.free / 1024 / 1024 / 1024) }} GB
+                        </strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="card" style="margin-top:16px;">
+
+            <div class="card-title">
+                👥 Recent Users
+            </div>
+
+            {% for user in recent_users %}
+
+                <div class="user">
+
+                    <div>
+                        <strong>{{ user.username }}</strong>
+
+                        {% if user.is_admin %}
+                            <span class="status active"> ADMIN</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="muted">
+                        {{ user.email }}
+                    </div>
+
+                    <div class="muted">
+                        {{ user.created_at }}
+                    </div>
+
+                </div>
+
+            {% else %}
+
+                <div class="muted">
+                    No users found.
+                </div>
+
+            {% endfor %}
+
+        </section>
+
+    </main>
+
+</div>
+
+</body>
+</html>

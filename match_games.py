@@ -63,10 +63,6 @@ rows = conn.execute("""
     JOIN games g ON g.app_id = sg.app_id
     JOIN stores s ON s.id = sg.store_id
     WHERE s.slug IN ('steam', 'gog')
-      AND (
-          s.slug = 'gog'
-          OR g.tracked = 1
-      )
 """).fetchall()
 
 steam = {}

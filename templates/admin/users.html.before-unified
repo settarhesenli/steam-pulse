@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Users — Steam Pulse Admin</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #060b11;
+            color: #e8f1f8;
+            font-family: Inter, Arial, sans-serif;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .sidebar {
+            position: fixed;
+            inset: 0 auto 0 0;
+            width: 240px;
+            background: #07111a;
+            border-right: 1px solid #1b2b39;
+            padding: 26px 16px;
+        }
+
+        .logo {
+            display: block;
+            margin: 4px 10px 40px;
+            font-size: 24px;
+            font-weight: 900;
+        }
+
+        .logo span {
+            display: block;
+            color: #35b6ff;
+        }
+
+        .section {
+            margin: 0 12px 10px;
+            color: #536b80;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+
+        nav {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 28px;
+        }
+
+        nav a {
+            padding: 12px 14px;
+            border-radius: 9px;
+            color: #91a5b7;
+            font-size: 14px;
+        }
+
+        nav a:hover,
+        nav a.active {
+            background: #102536;
+            color: #42baff;
+        }
+
+        .main {
+            margin-left: 240px;
+            padding: 34px;
+        }
+
+        h1 {
+            margin: 0 0 8px;
+        }
+
+        .subtitle {
+            color: #71879a;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: #0a131d;
+            border: 1px solid #1b2b39;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .table {
+            width: 100%;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 70px 1.1fr 1.5fr 1fr 110px 100px;
+            gap: 12px;
+            padding: 15px 18px;
+            border-bottom: 1px solid #172531;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .row:last-child {
+            border-bottom: 0;
+        }
+
+        .head {
+            color: #60788b;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .muted {
+            color: #71879a;
+        }
+
+        .admin {
+            color: #42eaa7;
+            font-weight: 800;
+        }
+
+        @media(max-width: 900px) {
+            .row {
+                grid-template-columns: 50px 1fr 1fr;
+            }
+
+            .optional {
+                display: none;
+            }
+        }
+
+        @media(max-width: 767px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                margin-left: 0;
+                padding: 20px 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<aside class="sidebar">
+
+    <a href="/admin" class="logo">
+        🎮 STEAM
+        <span>PULSE ADMIN</span>
+    </a>
+
+    <div class="section">ADMINISTRATION</div>
+
+    <nav>
+        <a href="/admin">📊 Overview</a>
+        <a href="/admin/users" class="active">👥 Users</a>
+        <a href="#">🎮 Games</a>
+        <a href="#">💰 Prices</a>
+    </nav>
+
+    <div class="section">MONITORING</div>
+
+    <nav>
+        <a href="#">📡 Traffic</a>
+        <a href="#">⚙ Workers</a>
+        <a href="#">📝 Logs</a>
+        <a href="#">🖥 System</a>
+    </nav>
+
+    <nav>
+        <a href="/">← Back to site</a>
+    </nav>
+
+</aside>
+
+<main class="main">
+
+    <h1>Users</h1>
+
+    <div class="subtitle">
+        Registered Steam Pulse users and account statistics.
+    </div>
+
+    <div class="card">
+
+        <div class="row head">
+            <div>ID</div>
+            <div>Username</div>
+            <div>Email</div>
+            <div class="optional">Registered</div>
+            <div>Wishlist</div>
+            <div>Role</div>
+        </div>
+
+        {% for user in users %}
+
+        <div class="row">
+
+            <div class="muted">
+                #{{ user.id }}
+            </div>
+
+            <div>
+                <strong>{{ user.username }}</strong>
+            </div>
+
+            <div>
+                {{ user.email }}
+            </div>
+
+            <div class="optional muted">
+                {{ user.created_at }}
+            </div>
+
+            <div>
+                {{ user.wishlist_count }}
+            </div>
+
+            <div>
+                {% if user.is_admin %}
+                    <span class="admin">ADMIN</span>
+                {% else %}
+                    <span class="muted">USER</span>
+                {% endif %}
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</main>
+
+</body>
+</html>

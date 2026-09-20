@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steam Pulse — Admin</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='admin.css') }}">
+
+    <style>
+        @import url("/static/admin.css");
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .card {
+            background: #0b1924;
+            border: 1px solid #1a2d3c;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .card-label {
+            color: #7f96a8;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .card-sub {
+            margin-top: 7px;
+            color: #36adff;
+            font-size: 12px;
+        }
+
+        .section-title {
+            margin: 30px 0 15px;
+            font-size: 17px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 18px;
+        }
+
+        .chart {
+            min-height: 300px;
+        }
+
+        .bars {
+            height: 230px;
+            display: flex;
+            align-items: flex-end;
+            gap: 7px;
+        }
+
+        .bar-wrap {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .bar {
+            width: 100%;
+            max-width: 24px;
+            min-height: 3px;
+            background: #2296e8;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .page-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 11px 0;
+            border-bottom: 1px solid #162733;
+            font-size: 13px;
+        }
+
+        .page-name {
+            color: #b8c9d5;
+        }
+
+        .page-count {
+            color: #4db5ff;
+            font-weight: 700;
+        }
+
+        @media (max-width: 1100px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="admin-layout">
+
+    {% include "admin/partials/sidebar.html" %}
+
+    <main class="admin-main">
+
+        <header class="admin-header">
+            <div>
+                <h1>Admin Dashboard</h1>
+                <p>Steam Pulse system overview</p>
+            </div>
+
+            <div class="live">LIVE DATA</div>
+        </header>
+
+        <div class="section-title">Traffic Overview</div>
+
+        <section class="stats">
+
+            <div class="card">
+                <div class="card-label">TOTAL VISITS</div>
+                <div class="card-value">{{ "{:,}".format(total_visits) }}</div>
+                <div class="card-sub">All recorded requests</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">UNIQUE VISITORS</div>
+                <div class="card-value">{{ "{:,}".format(unique_visitors) }}</div>
+                <div class="card-sub">Unique hashed IPs</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">TODAY</div>
+                <div class="card-value">{{ "{:,}".format(today_visits) }}</div>
+                <div class="card-sub">Visits today</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">LAST 7 DAYS</div>
+                <div class="card-value">{{ "{:,}".format(last_7_days) }}</div>
+                <div class="card-sub">Recent traffic</div>
+            </div>
+
+        </section>
+
+        <div class="section-title">Performance</div>
+
+        <section class="stats">
+
+            <div class="card">
+                <div class="card-label">AVG RESPONSE</div>
+                <div class="card-value">{{ avg_response }} ms</div>
+                <div class="card-sub">Average response time</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">4XX ERRORS</div>
+                <div class="card-value">{{ errors_4xx }}</div>
+                <div class="card-sub">Client errors</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">5XX ERRORS</div>
+                <div class="card-value">{{ errors_5xx }}</div>
+                <div class="card-sub">Server errors</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">REGISTERED USERS</div>
+                <div class="card-value">{{ "{:,}".format(total_users) }}</div>
+                <div class="card-sub">Total accounts</div>
+            </div>
+
+        </section>
+
+        <div class="section-title">Traffic & Pages</div>
+
+        <section class="grid-2">
+
+            <div class="card chart">
+                <div class="card-label">LAST 24 HOURS</div>
+
+                <div class="bars">
+                    {% set max_visits = traffic_24h|map(attribute='visits')|max|default(1) %}
+
+                    {% for item in traffic_24h %}
+                        <div class="bar-wrap"
+                             title="{{ item.hour }} — {{ item.visits }} visits">
+
+                            <div class="bar"
+                                 style="height: {{ ((item.visits / max_visits) * 100)|round }}%;">
+                            </div>
+
+                        </div>
+                    {% endfor %}
+                </div>
+
+                {% if not traffic_24h %}
+                    <div style="color:#718797;text-align:center;padding-top:80px;">
+                        No traffic data yet.
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="card">
+                <div class="card-label">TOP PAGES</div>
+
+                {% for page in top_pages %}
+                    <div class="page-row">
+                        <div class="page-name">{{ page.path }}</div>
+                        <div class="page-count">{{ page.views }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+
+        </section>
+
+        <div class="section-title">Database</div>
+
+        <section class="stats">
+
+            <div class="card">
+                <div class="card-label">TOTAL GAMES</div>
+                <div class="card-value">{{ "{:,}".format(total_games) }}</div>
+                <div class="card-sub">Games in database</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">TRAFFIC RECORDS</div>
+                <div class="card-value">{{ "{:,}".format(total_visits) }}</div>
+                <div class="card-sub">Analytics events</div>
+            </div>
+
+        </section>
+
+    </main>
+</div>
+
+</body>
+</html>

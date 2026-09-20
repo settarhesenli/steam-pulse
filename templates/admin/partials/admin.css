@@ -1,0 +1,153 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #050d14;
+    color: #e8f1f7;
+    font-family: Arial, sans-serif;
+}
+
+.admin-layout {
+    min-height: 100vh;
+}
+
+.admin-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 308px;
+    background: #07111a;
+    border-right: 1px solid #1b2b39;
+    padding: 38px 20px 24px;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+.admin-brand {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.05;
+    margin-bottom: 55px;
+    padding-left: 14px;
+}
+
+.admin-brand span {
+    color: #27a8ff;
+}
+
+.admin-section-title {
+    color: #657d8e;
+    font-size: 11px;
+    letter-spacing: 2px;
+    font-weight: 700;
+    margin: 0 0 14px 16px;
+}
+
+.admin-sidebar nav a,
+.admin-bottom a {
+    display: block;
+    padding: 13px 15px;
+    margin-bottom: 5px;
+    border-radius: 9px;
+    color: #8da2b1;
+    text-decoration: none;
+    font-size: 15px;
+    transition: .2s;
+}
+
+.admin-sidebar nav a:hover,
+.admin-sidebar nav a.active {
+    background: #102b40;
+    color: #36adff;
+}
+
+.admin-sidebar nav a.disabled {
+    opacity: .8;
+}
+
+.admin-sidebar nav a.disabled:hover {
+    background: transparent;
+    color: #8da2b1;
+}
+
+.monitoring-title {
+    margin-top: 38px;
+}
+
+.admin-bottom {
+    margin-top: auto;
+    border-top: 1px solid #182934;
+    padding-top: 15px;
+}
+
+.admin-main {
+    margin-left: 308px;
+    padding: 42px 46px;
+    min-height: 100vh;
+}
+
+.admin-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 35px;
+}
+
+.admin-header h1 {
+    margin: 0;
+    font-size: 34px;
+}
+
+.admin-header p {
+    margin: 8px 0 0;
+    color: #6f8798;
+    font-size: 15px;
+}
+
+.live {
+    color: #52d995;
+    font-size: 13px;
+}
+
+.live::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #52d995;
+    border-radius: 50%;
+    margin-right: 7px;
+}
+
+@media (max-width: 900px) {
+    .admin-sidebar {
+        width: 220px;
+    }
+
+    .admin-main {
+        margin-left: 220px;
+        padding: 30px;
+    }
+}
+
+@media (max-width: 700px) {
+    .admin-sidebar {
+        position: static;
+        width: 100%;
+        min-height: auto;
+    }
+
+    .admin-main {
+        margin-left: 0;
+        padding: 22px;
+    }
+
+    .admin-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
