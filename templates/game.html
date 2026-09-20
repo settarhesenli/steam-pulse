@@ -1576,6 +1576,82 @@ body {
     }
 }
 
+/* ================= TARGET PRICE ALERT ================= */
+
+.target-price-box{
+    margin-top:14px;
+    padding:16px;
+    background:linear-gradient(145deg,#0d1d2a,#09151f);
+    border:1px solid #21485f;
+    border-radius:10px;
+}
+
+.target-price-title{
+    color:#e8f0f6;
+    font-size:13px;
+    font-weight:800;
+    margin-bottom:8px;
+}
+
+.target-price-current{
+    color:#8ea0b0;
+    font-size:12px;
+    line-height:1.5;
+    margin-bottom:12px;
+}
+
+.target-price-current strong{
+    color:#66c0f4;
+}
+
+.target-price-form{
+    display:flex;
+    gap:8px;
+    align-items:center;
+}
+
+.target-price-form input[type="number"]{
+    flex:1;
+    min-width:0;
+    padding:10px 11px;
+    border-radius:7px;
+    border:1px solid #25394a;
+    background:#111e2b;
+    color:#fff;
+    outline:none;
+    box-sizing:border-box;
+}
+
+.target-price-form input[type="number"]:focus{
+    border-color:#66c0f4;
+}
+
+.target-price-btn{
+    border:0;
+    cursor:pointer;
+    white-space:nowrap;
+}
+
+.target-disable-btn{
+    margin-top:10px;
+    padding:2px 0;
+    border:0;
+    background:none;
+    color:#718b9d;
+    font-size:11px;
+    cursor:pointer;
+}
+
+.target-disable-btn:hover{
+    color:#e8f0f6;
+}
+
+.target-disabled{
+    color:#718b9d;
+    font-size:11px;
+    margin-top:10px;
+}
+
 
 </style>
 
@@ -1713,6 +1789,104 @@ Open on Steam ↗
             ♡ Add to Wishlist
         </button>
     </form>
+    {% endif %}
+
+    {% if wishlist_added %}
+    <div class="target-price-box">
+
+        <div class="target-price-title">
+            🔔 Price Alert
+        </div>
+
+        {% if wishlist_target %}
+
+        <div class="target-price-current">
+            Alert when price reaches
+            <strong>
+                {{ "%.2f"|format(wishlist_target["target_price"] / 100) }}
+                {{ wishlist_target["currency"] }}
+            </strong>
+        </div>
+
+        <form method="POST"
+              action="/wishlist/target/{{ game.app_id }}"
+              class="target-price-form">
+
+            <input type="hidden"
+                   name="csrf_token"
+                   value="{{ csrf_token() }}">
+
+            <input type="number"
+                   name="target_price"
+                   min="0.01"
+                   step="0.01"
+                   value="{{ "%.2f"|format(wishlist_target["target_price"] / 100) }}"
+                   required>
+
+            <input type="hidden"
+                   name="currency"
+                   value="USD">
+
+            <button type="submit" class="btn target-price-btn">
+                Update Alert
+            </button>
+        </form>
+
+        {% if wishlist_target["enabled"] %}
+
+        <form method="POST"
+              action="/wishlist/target/{{ game.app_id }}/disable">
+
+            <input type="hidden"
+                   name="csrf_token"
+                   value="{{ csrf_token() }}">
+
+            <button type="submit" class="target-disable-btn">
+                Disable Alert
+            </button>
+        </form>
+
+        {% else %}
+
+        <div class="target-disabled">
+            Alert disabled
+        </div>
+
+        {% endif %}
+
+        {% else %}
+
+        <div class="target-price-current">
+            Get an email when this game reaches your target price.
+        </div>
+
+        <form method="POST"
+              action="/wishlist/target/{{ game.app_id }}"
+              class="target-price-form">
+
+            <input type="hidden"
+                   name="csrf_token"
+                   value="{{ csrf_token() }}">
+
+            <input type="number"
+                   name="target_price"
+                   min="0.01"
+                   step="0.01"
+                   placeholder="e.g. 5.00"
+                   required>
+
+            <input type="hidden"
+                   name="currency"
+                   value="USD">
+
+            <button type="submit" class="btn target-price-btn">
+                Set Alert
+            </button>
+        </form>
+
+        {% endif %}
+
+    </div>
     {% endif %}
 
 {% else %}

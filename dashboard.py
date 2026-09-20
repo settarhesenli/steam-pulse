@@ -12,6 +12,7 @@ import time
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from rapidfuzz.fuzz import ratio, WRatio
 
 app = Flask(__name__)
 csrf = CSRFProtect(app)
@@ -300,6 +301,449 @@ def get_db():
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def smart_search_games(conn, query, limit=2000):
+    """
+    Final intelligent game search.
+
+    Ranking:
+    - exact / alias match
+    - version matching
+    - token coverage
+    - fuzzy similarity
+    - game/tracked/popularity bonuses
+    - DLC / soundtrack / tool / addon penalties
+    """
+
+    import re
+    import unicodedata
+
+    query = " ".join((query or "").strip().split())
+
+    if not query:
+        return []
+
+    ALIASES = {
+        "gta": "grand theft auto",
+        "gta5": "grand theft auto v",
+        "gta 5": "grand theft auto v",
+        "gta4": "grand theft auto iv",
+        "gta 4": "grand theft auto iv",
+        "gta3": "grand theft auto iii",
+        "gta 3": "grand theft auto iii",
+        "rdr": "red dead redemption",
+        "rdr2": "red dead redemption 2",
+        "cod": "call of duty",
+        "cs": "counter strike",
+        "cs2": "counter strike 2",
+        "pubg": "playerunknowns battlegrounds",
+        "aoe": "age of empires",
+        "ac": "assassins creed",
+    }
+
+    ROMAN_TO_NUMBER = {
+        "i": "1",
+        "ii": "2",
+        "iii": "3",
+        "iv": "4",
+        "v": "5",
+        "vi": "6",
+        "vii": "7",
+        "viii": "8",
+        "ix": "9",
+        "x": "10",
+    }
+
+    NUMBER_TO_ROMAN = {
+        "1": "i",
+        "2": "ii",
+        "3": "iii",
+        "4": "iv",
+        "5": "v",
+        "6": "vi",
+        "7": "vii",
+        "8": "viii",
+        "9": "ix",
+        "10": "x",
+    }
+
+    PRODUCT_PENALTIES = {
+        "dlc": 500,
+        "soundtrack": 500,
+        "ost": 500,
+        "season pass": 450,
+        "expansion": 450,
+        "artbook": 450,
+        "wallpaper": 450,
+        "cosmetic": 400,
+        "pack": 350,
+        "bundle": 350,
+        "collection": 300,
+        "upgrade": 400,
+        "add-on": 450,
+        "addon": 450,
+        "redmod": 400,
+        "redkit": 350,
+        "mod": 400,
+        "tool": 400,
+        "demo": 350,
+        "benchmark": 300,
+        "map": 300,
+        "sfx": 450,
+        "sound effects": 450,
+        "content": 250,
+    }
+
+    def normalize(value):
+        value = unicodedata.normalize("NFKD", value or "")
+        value = value.lower()
+        value = re.sub(r"[®™©]", "", value)
+
+        # Compact aliases before punctuation removal.
+        value = re.sub(r"\bgta\s*5\b", "grand theft auto v", value)
+        value = re.sub(r"\bgta\s*4\b", "grand theft auto iv", value)
+        value = re.sub(r"\bgta\s*3\b", "grand theft auto iii", value)
+        value = re.sub(r"\bgta\s*v\b", "grand theft auto v", value)
+        value = re.sub(r"\bgta\s*iv\b", "grand theft auto iv", value)
+
+        value = re.sub(r"[^a-z0-9\s]", " ", value)
+        tokens = value.split()
+
+        normalized = []
+
+        for token in tokens:
+            if token in ROMAN_TO_NUMBER:
+                normalized.append(ROMAN_TO_NUMBER[token])
+            else:
+                normalized.append(token)
+
+        return " ".join(normalized)
+
+    def version_tokens(value):
+        """
+        Extract meaningful standalone game versions.
+        Examples:
+        V -> 5
+        IV -> 4
+        2077 -> 2077
+        3 -> 3
+        """
+        normalized = normalize(value)
+        tokens = normalized.split()
+
+        versions = set()
+
+        for token in tokens:
+            if token.isdigit():
+                number = int(token)
+
+                # Ignore very small incidental numbers except 1-10,
+                # which commonly represent game sequels.
+                if 1 <= number <= 10 or number >= 100:
+                    versions.add(str(number))
+
+        return versions
+
+    def product_penalty(name):
+        lowered = (name or "").lower()
+        penalty = 0
+
+        for phrase, value in PRODUCT_PENALTIES.items():
+            if re.search(r"\b" + re.escape(phrase) + r"\b", lowered):
+                penalty += value
+
+        return penalty
+
+    raw_query = query.lower()
+    normalized_query = normalize(query)
+
+    # Apply alias only to the complete query.
+    alias_value = ALIASES.get(raw_query)
+    if alias_value:
+        normalized_query = normalize(alias_value)
+
+    query_tokens = normalized_query.split()
+
+    if not query_tokens:
+        return []
+
+    # ---------------------------------------------------------
+    # Candidate discovery
+    # ---------------------------------------------------------
+    #
+    # First try a strict AND search using the meaningful title
+    # tokens. This prevents queries such as "rdr2" from returning
+    # unrelated games containing only "dead" or "2".
+    #
+    # If strict search finds nothing, fall back to OR search for
+    # typo-tolerance and unusual titles.
+    #
+
+    version_token_set = {
+        token for token in query_tokens
+        if token.isdigit()
+    }
+
+    core_tokens = [
+        token
+        for token in query_tokens
+        if token not in version_token_set and len(token) >= 2
+    ]
+
+    # For a versioned search such as "gta 5", the franchise words
+    # are the strict SQL candidate filter. Version matching itself
+    # is handled by the scoring engine below.
+    strict_conditions = []
+    strict_params = []
+
+    for token in core_tokens:
+        strict_conditions.append("lower(name) LIKE ?")
+        strict_params.append(f"%{token}%")
+
+    # If there are no core tokens, use all useful tokens.
+    if not strict_conditions:
+        for token in query_tokens:
+            if len(token) >= 2:
+                strict_conditions.append("lower(name) LIKE ?")
+                strict_params.append(f"%{token}%")
+
+    rows = []
+
+    if strict_conditions:
+        strict_where = " AND ".join(strict_conditions)
+
+        rows = conn.execute(
+            f"""
+            SELECT app_id, name, type, developer,
+                   current_price, discount_percent,
+                   header_image, is_free,
+                   popularity_score, recommendation_count,
+                   tracked
+            FROM games
+            WHERE {strict_where}
+            LIMIT 8000
+            """,
+            strict_params
+        ).fetchall()
+
+    # Fallback only when strict discovery found nothing.
+    if not rows:
+        conditions = []
+        params = []
+
+        for token in query_tokens:
+            if len(token) >= 2:
+                conditions.append("lower(name) LIKE ?")
+                params.append(f"%{token}%")
+
+        conditions.append("lower(name) LIKE ?")
+        params.append(f"%{raw_query}%")
+
+        where_clause = " OR ".join(conditions)
+
+        rows = conn.execute(
+            f"""
+            SELECT app_id, name, type, developer,
+                   current_price, discount_percent,
+                   header_image, is_free,
+                   popularity_score, recommendation_count,
+                   tracked
+            FROM games
+            WHERE {where_clause}
+            LIMIT 8000
+            """,
+            params
+        ).fetchall()
+
+    # ---------------------------------------------------------
+    # Scoring
+    # ---------------------------------------------------------
+
+    query_versions = version_tokens(normalized_query)
+    query_token_set = set(query_tokens)
+
+    EDITION_WORDS = {
+        "ultimate",
+        "complete",
+        "definitive",
+        "deluxe",
+        "enhanced",
+        "remastered",
+        "director",
+        "cut",
+        "edition",
+    }
+
+    scored = []
+
+    for game in rows:
+        name = game["name"] or ""
+        normalized_name = normalize(name)
+        name_tokens = normalized_name.split()
+        name_token_set = set(name_tokens)
+
+        if not normalized_name:
+            continue
+
+        # -----------------------------------------------------
+        # Token matching
+        # -----------------------------------------------------
+
+        matched_tokens = query_token_set & name_token_set
+
+        if query_token_set:
+            token_coverage = len(matched_tokens) / len(query_token_set)
+        else:
+            token_coverage = 0.0
+
+        fuzzy_score = WRatio(normalized_query, normalized_name)
+
+        exact = normalized_name == normalized_query
+        prefix = normalized_name.startswith(normalized_query)
+        contains = normalized_query in normalized_name
+
+        score = 0.0
+
+        if exact:
+            score += 1800
+        elif prefix:
+            score += 1100
+        elif contains:
+            score += 850
+
+        score += token_coverage * 650
+        score += fuzzy_score * 2.0
+
+        # -----------------------------------------------------
+        # Version matching
+        # -----------------------------------------------------
+
+        name_versions = version_tokens(normalized_name)
+
+        if query_versions:
+            if query_versions & name_versions:
+                # Exact requested version.
+                score += 1200
+            elif name_versions:
+                # Candidate explicitly has another version.
+                score -= 1800
+            else:
+                # Candidate belongs to the franchise but has no
+                # recognizable requested version.
+                score -= 700
+
+        # -----------------------------------------------------
+        # GTA-specific franchise/version matching
+        # -----------------------------------------------------
+
+        if "grand theft auto" in normalized_query:
+
+            if "grand theft auto" in normalized_name:
+                score += 500
+
+                if query_versions:
+                    if query_versions & name_versions:
+                        score += 1200
+                    elif name_versions:
+                        score -= 2200
+                    else:
+                        score -= 900
+
+        # -----------------------------------------------------
+        # RDR-specific matching
+        # -----------------------------------------------------
+
+        if "red dead redemption" in normalized_query:
+
+            if "red dead redemption" in normalized_name:
+                score += 500
+
+                if query_versions:
+                    if query_versions & name_versions:
+                        score += 1000
+                    elif name_versions:
+                        score -= 2000
+                    else:
+                        score -= 800
+
+        # -----------------------------------------------------
+        # Main game type
+        # -----------------------------------------------------
+
+        game_type = (game["type"] or "").lower()
+
+        if game_type == "game":
+            score += 120
+        elif game_type == "dlc":
+            score -= 700
+        elif game_type in {"music", "mod", "hardware"}:
+            score -= 600
+
+        # -----------------------------------------------------
+        # Product/content penalties
+        # -----------------------------------------------------
+
+        score -= product_penalty(name)
+
+        lowered_name = normalized_name.lower()
+
+        # Edition variants should not outrank the base game when
+        # the user did not explicitly search for that edition.
+        edition_hits = sum(
+            1 for word in EDITION_WORDS
+            if word in name_token_set
+        )
+
+        query_mentions_edition = bool(
+            query_token_set & EDITION_WORDS
+        )
+
+        if edition_hits and not query_mentions_edition:
+            score -= min(edition_hits, 2) * 120
+
+        # -----------------------------------------------------
+        # Base-game preference
+        # -----------------------------------------------------
+
+        # If the candidate looks like the exact requested title
+        # plus extra words, slightly prefer the shorter/main title.
+        extra_tokens = max(
+            0,
+            len(name_tokens) - len(query_tokens)
+        )
+
+        if not query_versions and extra_tokens > 0:
+            score -= min(extra_tokens, 6) * 12
+
+        # A recognizable sequel number is useful for generic
+        # franchise searches such as "cyberpunk".
+        if not query_versions and name_versions:
+            score += 120
+
+        # -----------------------------------------------------
+        # Tracked / popularity
+        # -----------------------------------------------------
+
+        if game["tracked"]:
+            score += 50
+
+        popularity = float(game["popularity_score"] or 0)
+        recommendations = float(game["recommendation_count"] or 0)
+
+        score += min(popularity, 100) * 0.35
+        score += min(recommendations, 1000) * 0.01
+
+        scored.append((score, game))
+
+    scored.sort(
+        key=lambda item: (
+            -item[0],
+            item[1]["name"].lower()
+        )
+    )
+
+    return [game for _, game in scored[:limit]]
 
 
 ALLOWED_AVATAR_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
@@ -844,23 +1288,13 @@ def api_games():
     conn = get_db()
 
     if query:
-        search_pattern = f"%{query}%"
+        all_matches = smart_search_games(conn, query, limit=2000)
 
-        games = conn.execute("""
-            SELECT app_id, name, type, developer,
-                   current_price, discount_percent,
-                   header_image, is_free
-            FROM games
-            WHERE name LIKE ? COLLATE NOCASE
-            ORDER BY name
-            LIMIT ? OFFSET ?
-        """, (search_pattern, limit, offset)).fetchall()
+        total = len(all_matches)
 
-        total = conn.execute("""
-            SELECT COUNT(*)
-            FROM games
-            WHERE name LIKE ? COLLATE NOCASE
-        """, (search_pattern,)).fetchone()[0]
+        start = offset
+        end = offset + limit
+        games = all_matches[start:end]
 
     else:
 
@@ -969,6 +1403,93 @@ def remove_wishlist(app_id):
     conn.execute(
         """
         DELETE FROM wishlists
+        WHERE user_id = ? AND app_id = ?
+        """,
+        (session["user_id"], app_id)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("game", app_id=app_id))
+
+
+
+@app.route("/wishlist/target/<int:app_id>", methods=["POST"])
+def set_wishlist_target(app_id):
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    try:
+        target_price = int(round(float(request.form.get("target_price", "0")) * 100))
+    except (TypeError, ValueError):
+        return redirect(url_for("game", app_id=app_id))
+
+    if target_price <= 0:
+        return redirect(url_for("game", app_id=app_id))
+
+    currency = (request.form.get("currency") or "USD").upper()
+
+    if currency not in {"USD", "EUR"}:
+        currency = "USD"
+
+    conn = get_db()
+
+    game = conn.execute(
+        "SELECT app_id FROM games WHERE app_id = ?",
+        (app_id,)
+    ).fetchone()
+
+    if not game:
+        conn.close()
+        return "Game not found", 404
+
+    wishlist = conn.execute(
+        """
+        SELECT 1
+        FROM wishlists
+        WHERE user_id = ? AND app_id = ?
+        """,
+        (session["user_id"], app_id)
+    ).fetchone()
+
+    if not wishlist:
+        conn.close()
+        return "Game is not in wishlist", 400
+
+    conn.execute(
+        """
+        INSERT INTO wishlist_targets
+            (user_id, app_id, target_price, currency, enabled, updated_at)
+        VALUES (?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(user_id, app_id)
+        DO UPDATE SET
+            target_price = excluded.target_price,
+            currency = excluded.currency,
+            enabled = 1,
+            updated_at = CURRENT_TIMESTAMP
+        """,
+        (session["user_id"], app_id, target_price, currency)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("game", app_id=app_id))
+
+
+@app.route("/wishlist/target/<int:app_id>/disable", methods=["POST"])
+def disable_wishlist_target(app_id):
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    conn = get_db()
+
+    conn.execute(
+        """
+        UPDATE wishlist_targets
+        SET enabled = 0,
+            updated_at = CURRENT_TIMESTAMP
         WHERE user_id = ? AND app_id = ?
         """,
         (session["user_id"], app_id)
@@ -1106,6 +1627,7 @@ def game(app_id):
     best_price = min(available_prices) if available_prices else None
 
     wishlist_added = False
+    wishlist_target = None
 
     if session.get("user_id"):
         wishlist_added = conn.execute(
@@ -1116,6 +1638,15 @@ def game(app_id):
             """,
             (session["user_id"], app_id)
         ).fetchone() is not None
+
+        wishlist_target = conn.execute(
+            """
+            SELECT target_price, currency, enabled
+            FROM wishlist_targets
+            WHERE user_id = ? AND app_id = ?
+            """,
+            (session["user_id"], app_id)
+        ).fetchone()
 
     conn.close()
 
@@ -1129,6 +1660,7 @@ def game(app_id):
         store_prices=store_prices,
         best_price=best_price,
         wishlist_added=wishlist_added,
+        wishlist_target=wishlist_target,
         steam_price=steam_price
     )
 
